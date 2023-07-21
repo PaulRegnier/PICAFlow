@@ -1,0 +1,19 @@
+---
+title: "Tutorial"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Tutorial}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+Due to the large size of the original Tutorial vignette (mainly because of the important number of figures we show), we decided to permanently move it to a static Web page, which can be freely accessible here: https://paul-regnier.fr/picaflow-tutorial/.
+
+Thank you for your understanding!
