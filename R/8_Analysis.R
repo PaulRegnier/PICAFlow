@@ -7,6 +7,7 @@
 #' @param sampleNamesColumn A string defining the column name the be used as common comparator for each file to merge. This column should be present in each file to be opened and should present identical values (for instance, individualized sample names). Defaults to `NULL`.
 #'
 #' @return Return value is directly passed to `mergeData()` function.
+#' TEST MODIFICATION FOR GITHUB
 
 openFiles = function(pattern = NULL, sampleNamesColumn = NULL)
 {
@@ -226,7 +227,7 @@ subsetDataUMAP = function(data = NULL, columnsToKeepData = NULL, columnsToKeepMe
   {
     data = data[, totalColsToKeepID]
   }
-  
+
   rownamesData = rownames(data)
   data = apply(data, 2, as.numeric)
   data = as.data.frame(data)
