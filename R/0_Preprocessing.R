@@ -1,4 +1,3 @@
-#
 #' Setup the working directory
 #'
 #' This function setups the working directory. It does not take any input argument but assumes that the `workingDirectory` variable is set to the path of interest using the base R `setwd()` function. From this path, everything will be wiped and `input`, `output` and `rds` directories will be created. The `output`` directory will also contain several other specific directories that will be used in the subsequent analyses.
