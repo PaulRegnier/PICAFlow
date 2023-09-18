@@ -17,7 +17,7 @@ applyClusterModel(
 
 \item{dataValidation}{A data frame containing the validation dataset. Defaults to \code{NULL}.}
 
-\item{parametersToUse}{An vector defining the parameters to use for the model application. Defaults to \code{NULL}.}
+\item{parametersToUse}{A vector defining the parameters to use for the model application. Defaults to \code{NULL}.}
 
 \item{coresNumber}{An integer defining the number of cores to use to apply the clustering model. Defaults to \code{1}.}
 

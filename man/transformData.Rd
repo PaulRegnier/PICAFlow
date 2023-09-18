@@ -4,14 +4,12 @@
 \alias{transformData}
 \title{Transform \code{rds} files}
 \usage{
-transformData(parametersToTransform = NULL, transformationMethod = "logicle")
+transformData(parametersToTransform = NULL)
 }
 \arguments{
-\item{parametersToTransform}{A vector of all parameters to transform in each \code{rds} file. Defaults to \code{NULL}.}
+\item{parametersToTransform}{A vector of all parameters to transform in each \code{rds} file. Defaults to \code{NULL}.
 
-\item{transformationMethod}{A string defining the transformation method to apply. It can be either \code{logicle} or \code{biexp}. Defaults to \code{logicle}.
-
-Please note that the \code{logicle} transformation needs a file generated using the \code{manualLogicle} R Shiny application which contains the parameters of the \code{logicle} transformation to be used for each parameter. The \code{biexp} transformation does not need this file and can be directly applied.}
+Please note that this function needs the \code{parametersTransformations.rds} file located in the \verb{output > 1_Transformation} directory which is generated using the \code{transformationTuning} R Shiny application. This file contains the type as well as the parameters of the transformation of interest to be used for each flow cytometry parameter in the dataset.}
 }
 \value{
 Generated \code{rds} files are saved to \code{rds} directory, overwriting the previous ones.

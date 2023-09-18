@@ -14,7 +14,7 @@ clustersPhenotypesHeatmap(
 \arguments{
 \item{prefix}{A string defining the prefix of the clusters phenotypes file to use. Defaults to \code{NULL}.}
 
-\item{thresholds}{A data frame defining the thresholds for each parameter. Defaults to \code{NULL}.}
+\item{thresholds}{(Optional) A data frame defining the thresholds for each parameter. If set to \code{NULL}, then binary heatmaps will not be generated. Thresholds values for each parameter are typically obtained when the user chooses the hierarchical clustering + k-nearest neighbors approach for cell clustering. however, the user can still provide these thresholds by following the subsection called "Determine binary thresholds" detailed in the tutorial. Defaults to \code{NULL}.}
 
 \item{metricUsed}{A string defining the metric to use for statistics computation. It can be either \code{mean} or \code{median}. Defaults to \code{median}.}
 

@@ -24,7 +24,7 @@ collapseCloseClusters(
 \item{datasetFolder}{A string defining in which folder to save the results. It can be either \code{full} for the full downsampled dataset, \code{training} for the training downsampled subdataset or \code{validation} for the validation downsampled subdataset. The value must match the origin of the data used. Defaults to \code{full}.}
 }
 \value{
-Generated rds file is saved to \verb{output > 7_Clustering} directory.
+Generated rds file is saved to \code{rds} directory.
 }
 \description{
 This function allows to collapse the phenotypically close cell clusters in order to reduce their number and ease data interpretation. Results are saved in a new \code{rds} file.

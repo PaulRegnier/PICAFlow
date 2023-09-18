@@ -53,7 +53,7 @@ mergeSamples = function(suffix = NULL)
 #'
 #' @export
 
-launchManualLogicleShinyApp = function(fs_shiny = NULL)
+launchTransformationTuningShinyApp = function(fs_shiny = NULL)
 {
   o = NULL
   a = NULL
@@ -108,40 +108,89 @@ launchManualLogicleShinyApp = function(fs_shiny = NULL)
     }
   }
 
+  transformationsList = as.vector(c("Logicle", "Biexponential", "Arcsinh"))
+
   # Define UI
   ui = shiny::pageWithSidebar(
 
-    shiny::titlePanel(shiny::h1(shiny::strong("Tuning of logicle parameters"), align = "center")),
+    shiny::titlePanel(shiny::h1(shiny::strong("Tuning of transformation parameters"), align = "center")),
 
     shiny::sidebarPanel(
 
       shiny::selectInput("sample", "Sample", samplesValuesList),
       shiny::selectInput("parameter", "Parameter", parametersNamesList),
+      shiny::selectInput("transformation", "Transformation", transformationsList),
       shiny::verbatimTextOutput("auto_parameters"),
       shiny::textOutput("status_parameter"),
-      shiny::sliderInput("logicle_t", shiny::strong("t = highest value of the dataset"), min = 1, max = 20, value = 1, step = 0.1),
-      shiny::textOutput("logicle_t_lin"),
-      shiny::sliderInput("logicle_w", shiny::strong("w = linearization width (slope at 0)"), min = 0, max = 6, value = 0.2, step = 0.1),
-      shiny::sliderInput("logicle_m", shiny::strong("m = number of decades of transformed data"), min = 0, max = 10, value = 1, step = 0.1),
-      shiny::sliderInput("logicle_a", shiny::strong("a = constant to add to data"), min = 0, max = 2, value = 0, step = 0.1),
+
+
+      shiny::tabsetPanel(
+        id = "params",
+        type = "hidden",
+        shiny::tabPanel("Logicle",
+                 shiny::actionButton('apply_autologicle', 'Apply autologicle'),
+
+                 shiny::sliderInput("logicle_t", shiny::strong("t = Highest value of the dataset"), min = 1, max = 20, value = 1, step = 0.1),
+                 shiny::textOutput("logicle_t_lin"),
+                 shiny::sliderInput("logicle_w", shiny::strong("w = Linearization width (slope at 0)"), min = 0, max = 6, value = 0.2, step = 0.1),
+                 shiny::sliderInput("logicle_m", shiny::strong("m = Number of decades of transformed data"), min = 0, max = 10, value = 1, step = 0.1),
+                 shiny::sliderInput("logicle_a", shiny::strong("a = Constant to add to data"), min = 0, max = 2, value = 0, step = 0.1),
+
+
+
+
+
+        ),
+        shiny::tabPanel("Biexponential",
+                 shiny::sliderInput("biexp_a", shiny::strong("a"), min = 0, max = 10, value = 0.5, step = 0.1),
+                 shiny::sliderInput("biexp_b", shiny::strong("b"), min = 0, max = 10, value = 1, step = 0.1),
+                 shiny::sliderInput("biexp_c", shiny::strong("c"), min = 0, max = 10, value = 0.5, step = 0.1),
+                 shiny::sliderInput("biexp_d", shiny::strong("d"), min = 0, max = 10, value = 1, step = 0.1),
+                 shiny::sliderInput("biexp_f", shiny::strong("f = Constant bias for the intercept"), min = 0, max = 50, value = 0, step = 1),
+                 shiny::sliderInput("biexp_w", shiny::strong("w = Constant bias for the 0 point of the data"), min = 0, max = 50, value = 0, step = 1),
+
+
+
+
+        ),
+        shiny::tabPanel("Arcsinh",
+                 shiny::sliderInput("arcsinh_a", shiny::strong("a = Shift about 0"), min = 0, max = 1, value = 1, step = 0.01),
+                 shiny::sliderInput("arcsinh_b", shiny::strong("b = Scale factor"), min = 0, max = 1, value = 1, step = 0.01),
+                 shiny::sliderInput("arcsinh_c", shiny::strong("c = Constant to add to data"), min = 0, max = 50, value = 0, step = 1),
+
+
+
+        )
+      ),
 
       shiny::actionButton('save_inputs', 'Save current parameter'),
-      shiny::actionButton('export_txt', 'Export txt'),
+      shiny::actionButton('export_rds', 'Export rds'),
       shiny::actionButton('clear_all', 'Clear exports'),
-      shiny::actionButton('apply_autologicle', 'Apply autologicle'),
       width = 4),
 
     shiny::mainPanel(
-      shiny::plotOutput(outputId = "histoPlot", height = "900px"),
+      shiny::plotOutput(outputId = "histoPlot", height = "900px")
     )
   )
 
   # Define server logic
   server = function(input, output, session)
   {
-    output$logicle_t_lin = shiny::renderText({
-      paste("log10(t) = ", format(round(10^input$logicle_t, 0), big.mark = " ", trim = TRUE), sep = "")
-    })
+
+
+
+      output$logicle_t_lin = shiny::renderText({
+
+        if(input$transformation == "Logicle")
+        {
+
+          paste("log10(t) = ", format(round(10^input$logicle_t, 0), big.mark = " ", trim = TRUE), sep = "")
+
+        }
+      })
+
+
+
 
     output$auto_parameters = shiny::renderText({
 
@@ -161,103 +210,270 @@ launchManualLogicleShinyApp = function(fs_shiny = NULL)
 
       currentParameter_a = 0
 
-      paste("Data info:\nmin = ", format(round(currentParameter_min, 0), big.mark = " ", trim = TRUE), "\nmax = ", format(round(currentParameter_max, 0), big.mark = " ", trim = TRUE), "\nmean = ", format(round(currentParameter_mean, 0), big.mark = " ", trim = TRUE), "\n\nAutologicle:\nt = ", format(round(currentParameter_t, 0), big.mark = " ", trim = TRUE), " or log10(t) = ", round(log10(currentParameter_t), 1), "\nw = ", round(currentParameter_w, 1), "\nm = ", round(currentParameter_m, 1), "\na = ",
-            round(currentParameter_a, 1), sep = "")
+      if(input$transformation == "Logicle")
+      {
+
+        nextText = paste("\n\nAutologicle:\nt = ", format(round(currentParameter_t, 0), big.mark = " ", trim = TRUE), " or log10(t) = ", round(log10(currentParameter_t), 1), "\nw = ", round(currentParameter_w, 1), "\nm = ", round(currentParameter_m, 1), "\na = ", round(currentParameter_a, 1), sep = "")
+      } else if(input$transformation == "Biexponential")
+      {
+
+        nextText = "\n\nFormula applied: biexp(x) = a*exp(b*(x-w))-c*exp(-d*(x-w))+f"
+      } else if(input$transformation == "Arcsinh")
+      {
+        nextText = "\n\nFormula applied: arcsinh(x) = asinh(a+b*x)+c"
+
+      } else
+      {
+
+        nextText = paste("\n\nAutologicle:\nt = ", format(round(currentParameter_t, 0), big.mark = " ", trim = TRUE), " or log10(t) = ", round(log10(currentParameter_t), 1), "\nw = ", round(currentParameter_w, 1), "\nm = ", round(currentParameter_m, 1), "\na = ", round(currentParameter_a, 1), sep = "")
+      }
+
+      paste("Data info:\nmin = ", format(round(currentParameter_min, 0), big.mark = " ", trim = TRUE), "\nmax = ", format(round(currentParameter_max, 0), big.mark = " ", trim = TRUE), "\nmean = ", format(round(currentParameter_mean, 0), big.mark = " ", trim = TRUE), nextText, sep = "")
+    })
+
+    shiny::observeEvent(input$transformation, {
+      shiny::updateTabsetPanel(inputId = "params", selected = input$transformation)
     })
 
     shiny::observe({
 
-      if (file.exists(file.path("output", "1_Transformation", "parametersLogicle.txt")))
+
+      fileExistsToCheckRds = file.path("rds", "parametersTransformations.rds")
+
+
+     if (file.exists(fileExistsToCheckRds)) # If a rds file only has already been exported
       {
-        importedTxt = utils::read.table(file.path("output", "1_Transformation", "parametersLogicle.txt"), header = FALSE)
-        colnames(importedTxt) = importedTxt[1, ]
-        importedTxt = importedTxt[-1, ]
+        importedRDS = readRDS(fileExistsToCheckRds)
 
-        if (input$parameter %in% colnames(importedTxt))
-        {
-          parameterDataID = which(colnames(importedTxt) == input$parameter)
-          associatedParameterData = importedTxt[, c(1, parameterDataID)]
-
-          shiny::updateSliderInput(session, "logicle_w", value = as.numeric(associatedParameterData[associatedParameterData$parameter == "w", 2]))
-          shiny::updateSliderInput(session, "logicle_t", value = log10(as.numeric(associatedParameterData[associatedParameterData$parameter == "t", 2])))
-          shiny::updateSliderInput(session, "logicle_a", value = as.numeric(associatedParameterData[associatedParameterData$parameter == "a", 2]))
-          shiny::updateSliderInput(session, "logicle_m", value = as.numeric(associatedParameterData[associatedParameterData$parameter == "m", 2]))
-        } else
-        {
-          data = fs_shiny[[as.numeric(input$sample)]]
-
-          dataToUseForTransformationEstimation = data@exprs[, input$parameter]
-
-          currentParameterRange = range(dataToUseForTransformationEstimation)
-          currentParameter_t = currentParameterRange[2]
-          currentParameter_m = log10(currentParameter_t)
-          currentParameter_r = currentParameterRange[1]
-          currentParameter_w = (currentParameter_m - log10(currentParameter_t/abs(currentParameter_r)))/2
-          currentParameter_a = 0
-
-          shiny::updateSliderInput(session, "logicle_w", value = currentParameter_w)
-          shiny::updateSliderInput(session, "logicle_t", value = log10(currentParameter_t))
-          shiny::updateSliderInput(session, "logicle_a", value = currentParameter_a)
-          shiny::updateSliderInput(session, "logicle_m", value = currentParameter_m)
-
-          output$status_parameter = shiny::renderText("Status: unsaved")
-        }
-      } else if (file.exists(file.path("rds", "parameters.rds")))
-      {
-        importedRDS = readRDS(file.path("rds", "parameters.rds"))
-
-        if (input$parameter %in% names(importedRDS))
+        if (input$parameter %in% names(importedRDS)) # If the selected parameter is present in the file, we use this value
         {
           parameterDataID = which(names(importedRDS) == input$parameter)
           associatedParameterData = importedRDS[[parameterDataID]]
 
-          shiny::updateSliderInput(session, "logicle_w", value = associatedParameterData$w)
-          shiny::updateSliderInput(session, "logicle_t", value = log10(associatedParameterData$t))
-          shiny::updateSliderInput(session, "logicle_a", value = associatedParameterData$a)
-          shiny::updateSliderInput(session, "logicle_m", value = associatedParameterData$m)
-        } else
+
+
+          if(associatedParameterData$transformation == "Logicle")
+          {
+            shiny::updateSelectInput(session, "transformation", selected = associatedParameterData$transformation)
+
+            shiny::updateSliderInput(session, "logicle_w", value = associatedParameterData$w)
+            shiny::updateSliderInput(session, "logicle_t", value = log10(associatedParameterData$t))
+            shiny::updateSliderInput(session, "logicle_a", value = associatedParameterData$a)
+            shiny::updateSliderInput(session, "logicle_m", value = associatedParameterData$m)
+
+          } else if(associatedParameterData$transformation == "Biexponential")
+          {
+            shiny::updateSelectInput(session, "transformation", selected = associatedParameterData$transformation)
+
+            shiny::updateSliderInput(session, "biexp_a", value = associatedParameterData$a)
+            shiny::updateSliderInput(session, "biexp_b", value = associatedParameterData$b)
+            shiny::updateSliderInput(session, "biexp_c", value = associatedParameterData$c)
+            shiny::updateSliderInput(session, "biexp_d", value = associatedParameterData$d)
+            shiny::updateSliderInput(session, "biexp_f", value = associatedParameterData$f)
+            shiny::updateSliderInput(session, "biexp_w", value = associatedParameterData$w)
+
+          } else if(associatedParameterData$transformation == "Arcsinh")
+          {
+            shiny::updateSelectInput(session, "transformation", selected = associatedParameterData$transformation)
+
+            shiny::updateSliderInput(session, "arcsinh_a", value = associatedParameterData$a)
+            shiny::updateSliderInput(session, "arcsinh_b", value = associatedParameterData$b)
+            shiny::updateSliderInput(session, "arcsinh_c", value = associatedParameterData$c)
+
+          } else
+          {
+
+            shiny::updateSelectInput(session, "transformation", selected = "Logicle")
+
+            shiny::updateSliderInput(session, "logicle_w", value = associatedParameterData$w)
+            shiny::updateSliderInput(session, "logicle_t", value = log10(associatedParameterData$t))
+            shiny::updateSliderInput(session, "logicle_a", value = associatedParameterData$a)
+            shiny::updateSliderInput(session, "logicle_m", value = associatedParameterData$m)
+          }
+
+
+
+
+
+        } else # If the selected parameter is not present in the file, we give it default values
         {
           data = fs_shiny[[as.numeric(input$sample)]]
 
           dataToUseForTransformationEstimation = data@exprs[, input$parameter]
 
-          currentParameterRange = range(dataToUseForTransformationEstimation)
-          currentParameter_t = currentParameterRange[2]
-          currentParameter_m = log10(currentParameter_t)
-          currentParameter_r = currentParameterRange[1]
-          currentParameter_w = (currentParameter_m - log10(currentParameter_t/abs(currentParameter_r)))/2
-          currentParameter_a = 0
 
-          shiny::updateSliderInput(session, "logicle_w", value = currentParameter_w)
-          shiny::updateSliderInput(session, "logicle_t", value = log10(currentParameter_t))
-          shiny::updateSliderInput(session, "logicle_a", value = currentParameter_a)
-          shiny::updateSliderInput(session, "logicle_m", value = currentParameter_m)
+
+          if(input$transformation == "Logicle")
+          {
+
+            currentParameterRange = range(dataToUseForTransformationEstimation)
+            currentParameter_t = currentParameterRange[2]
+            currentParameter_m = log10(currentParameter_t)
+            currentParameter_r = currentParameterRange[1]
+            currentParameter_w = (currentParameter_m - log10(currentParameter_t/abs(currentParameter_r)))/2
+            currentParameter_a = 0
+
+            shiny::updateSelectInput(session, "transformation", selected = input$transformation)
+
+
+            shiny::updateSliderInput(session, "logicle_w", value = currentParameter_w)
+            shiny::updateSliderInput(session, "logicle_t", value = log10(currentParameter_t))
+            shiny::updateSliderInput(session, "logicle_a", value = currentParameter_a)
+            shiny::updateSliderInput(session, "logicle_m", value = currentParameter_m)
+
+          } else if(input$transformation == "Biexponential")
+          {
+
+
+            currentParameter_a = 0.5
+            currentParameter_b = 1
+            currentParameter_c = currentParameter_a
+            currentParameter_d = currentParameter_b
+            currentParameter_f = 0
+            currentParameter_w = 0
+
+            shiny::updateSelectInput(session, "transformation", selected = input$transformation)
+
+
+            shiny::updateSliderInput(session, "biexp_a", value = currentParameter_a)
+            shiny::updateSliderInput(session, "biexp_b", value = currentParameter_b)
+            shiny::updateSliderInput(session, "biexp_c", value = currentParameter_c)
+            shiny::updateSliderInput(session, "biexp_d", value = currentParameter_d)
+            shiny::updateSliderInput(session, "biexp_f", value = currentParameter_f)
+            shiny::updateSliderInput(session, "biexp_w", value = currentParameter_w)
+
+          } else if(input$transformation == "Arcsinh")
+          {
+
+
+            currentParameter_a = 1
+            currentParameter_b = 1
+            currentParameter_c = 0
+
+            shiny::updateSelectInput(session, "transformation", selected = input$transformation)
+
+
+            shiny::updateSliderInput(session, "arcsinh_a", value = currentParameter_a)
+            shiny::updateSliderInput(session, "arcsinh_b", value = currentParameter_b)
+            shiny::updateSliderInput(session, "arcsinh_c", value = currentParameter_c)
+          } else
+          {
+
+
+            currentParameterRange = range(dataToUseForTransformationEstimation)
+            currentParameter_t = currentParameterRange[2]
+            currentParameter_m = log10(currentParameter_t)
+            currentParameter_r = currentParameterRange[1]
+            currentParameter_w = (currentParameter_m - log10(currentParameter_t/abs(currentParameter_r)))/2
+            currentParameter_a = 0
+
+            shiny::updateSelectInput(session, "transformation", selected = "Logicle")
+
+            shiny::updateSliderInput(session, "logicle_w", value = currentParameter_w)
+            shiny::updateSliderInput(session, "logicle_t", value = log10(currentParameter_t))
+            shiny::updateSliderInput(session, "logicle_a", value = currentParameter_a)
+            shiny::updateSliderInput(session, "logicle_m", value = currentParameter_m)
+          }
+
+
+
+
+
 
           output$status_parameter = shiny::renderText("Status: unsaved")
         }
-      } else
+      } else # If no text or rds files have been exported, we only can give default values
       {
         data = fs_shiny[[as.numeric(input$sample)]]
 
         dataToUseForTransformationEstimation = data@exprs[, input$parameter]
 
-        currentParameterRange = range(dataToUseForTransformationEstimation)
-        currentParameter_t = currentParameterRange[2]
-        currentParameter_m = log10(currentParameter_t)
-        currentParameter_r = currentParameterRange[1]
-        currentParameter_w = (currentParameter_m - log10(currentParameter_t/abs(currentParameter_r)))/2
-        currentParameter_a = 0
 
-        shiny::updateSliderInput(session, "logicle_w", value = currentParameter_w)
-        shiny::updateSliderInput(session, "logicle_t", value = log10(currentParameter_t))
-        shiny::updateSliderInput(session, "logicle_a", value = currentParameter_a)
-        shiny::updateSliderInput(session, "logicle_m", value = currentParameter_m)
+
+        if(input$transformation == "Logicle")
+        {
+
+          currentParameterRange = range(dataToUseForTransformationEstimation)
+          currentParameter_t = currentParameterRange[2]
+          currentParameter_m = log10(currentParameter_t)
+          currentParameter_r = currentParameterRange[1]
+          currentParameter_w = (currentParameter_m - log10(currentParameter_t/abs(currentParameter_r)))/2
+          currentParameter_a = 0
+
+          shiny::updateSelectInput(session, "transformation", selected = input$transformation)
+
+
+          shiny::updateSliderInput(session, "logicle_w", value = currentParameter_w)
+          shiny::updateSliderInput(session, "logicle_t", value = log10(currentParameter_t))
+          shiny::updateSliderInput(session, "logicle_a", value = currentParameter_a)
+          shiny::updateSliderInput(session, "logicle_m", value = currentParameter_m)
+
+        } else if(input$transformation == "Biexponential")
+        {
+
+
+          currentParameter_a = 0.5
+          currentParameter_b = 1
+          currentParameter_c = currentParameter_a
+          currentParameter_d = currentParameter_b
+          currentParameter_f = 0
+          currentParameter_w = 0
+
+          shiny::updateSelectInput(session, "transformation", selected = input$transformation)
+
+
+          shiny::updateSliderInput(session, "biexp_a", value = currentParameter_a)
+          shiny::updateSliderInput(session, "biexp_b", value = currentParameter_b)
+          shiny::updateSliderInput(session, "biexp_c", value = currentParameter_c)
+          shiny::updateSliderInput(session, "biexp_d", value = currentParameter_d)
+          shiny::updateSliderInput(session, "biexp_f", value = currentParameter_f)
+          shiny::updateSliderInput(session, "biexp_w", value = currentParameter_w)
+
+        } else if(input$transformation == "Arcsinh")
+        {
+
+          currentParameter_a = 1
+          currentParameter_b = 1
+          currentParameter_c = 0
+
+          shiny::updateSelectInput(session, "transformation", selected = input$transformation)
+
+
+          shiny::updateSliderInput(session, "arcsinh_a", value = currentParameter_a)
+          shiny::updateSliderInput(session, "arcsinh_b", value = currentParameter_b)
+          shiny::updateSliderInput(session, "arcsinh_c", value = currentParameter_c)
+
+        } else
+        {
+
+          currentParameterRange = range(dataToUseForTransformationEstimation)
+          currentParameter_t = currentParameterRange[2]
+          currentParameter_m = log10(currentParameter_t)
+          currentParameter_r = currentParameterRange[1]
+          currentParameter_w = (currentParameter_m - log10(currentParameter_t/abs(currentParameter_r)))/2
+          currentParameter_a = 0
+
+          shiny::updateSelectInput(session, "transformation", selected = "Logicle")
+
+
+          shiny::updateSliderInput(session, "logicle_w", value = currentParameter_w)
+          shiny::updateSliderInput(session, "logicle_t", value = log10(currentParameter_t))
+          shiny::updateSliderInput(session, "logicle_a", value = currentParameter_a)
+          shiny::updateSliderInput(session, "logicle_m", value = currentParameter_m)
+
+        }
+
+
 
         output$status_parameter = shiny::renderText("Status: unsaved")
       }
     })
 
     output$histoPlot = shiny::renderPlot({
+
+
+
+
 
       data = fs_shiny[[as.numeric(input$sample)]]
 
@@ -266,7 +482,33 @@ launchManualLogicleShinyApp = function(fs_shiny = NULL)
       parameterNameId = which(input$parameter == names(flowCore::markernames(fs_shiny)))
       parameterName = as.character(flowCore::markernames(fs_shiny)[parameterNameId])
 
-      decidedTransform = flowCore::logicleTransform(w = input$logicle_w, t = 10^input$logicle_t, m = input$logicle_m, a = input$logicle_a)
+      if(input$transformation == "Logicle")
+      {
+
+        decidedTransform = flowCore::logicleTransform(w = input$logicle_w, t = 10^input$logicle_t, m = input$logicle_m, a = input$logicle_a)
+
+
+      } else if(input$transformation == "Biexponential")
+      {
+        decidedTransform = flowCore::biexponentialTransform(a = input$biexp_a, b = input$biexp_b, c = input$biexp_c, d = input$biexp_d, f = input$biexp_f, w = input$biexp_w)
+
+
+      } else if(input$transformation == "Arcsinh")
+      {
+        decidedTransform = flowCore::arcsinhTransform(a = input$arcsinh_a, b = input$arcsinh_b, c = input$arcsinh_c)
+
+      } else
+      {
+        decidedTransform = flowCore::logicleTransform(w = input$logicle_w, t = 10^input$logicle_t, m = input$logicle_m, a = input$logicle_a)
+
+
+
+      }
+
+
+
+
+
       decidedTransformList = flowCore::transformList(input$parameter, decidedTransform)
 
       res = flowCore::transform(data, decidedTransformList)
@@ -283,25 +525,54 @@ launchManualLogicleShinyApp = function(fs_shiny = NULL)
 
       plot = ggplot2::ggplot(resPlot, ggplot2::aes(x = resPlot[, input$parameter])) +
         ggplot2::geom_density(fill = "grey", linewidth = 1) +
-        ggplot2::xlim(-1, 8) +
-        ggplot2::labs(title = plotMainTitle, x = "Intensity of fluorescence (logicle-transformed)", y = "Density") +
+        ggplot2::xlim(floor(min(resPlot[, input$parameter])) , ceiling(max(resPlot[, input$parameter]))) +
+        ggplot2::labs(title = plotMainTitle, x = paste("Intensity of fluorescence (using ", input$transformation, " transformation)", sep = ""), y = "Density") +
         ggplot2::theme(axis.text = ggplot2::element_text(size = 14), axis.title = ggplot2::element_text(size = 16, face = "bold"), plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5))
       plot
     })
 
-    totalParametersToExport = list()
+
+
 
     shiny::observeEvent(input$save_inputs, {
       exportedValues = shiny::reactiveValuesToList(input)
 
-      if (file.exists(file.path("rds", "parameters.rds")))
+
+      totalParametersToExport = list()
+
+
+      fileExistsToCheckRds = file.path("rds", "parametersTransformations.rds")
+
+
+      if (file.exists(fileExistsToCheckRds))
       {
-        totalParametersToExport = readRDS(file.path("rds", "parameters.rds"))
+        totalParametersToExport = readRDS(fileExistsToCheckRds)
       }
 
-      totalParametersToExport[[exportedValues$parameter]] = list(w = input$logicle_w, t = 10^input$logicle_t, m = input$logicle_m, a = input$logicle_a)
+      if(input$transformation == "Logicle")
+      {
 
-      saveRDS(totalParametersToExport, file.path("rds", "parameters.rds"))
+        totalParametersToExport[[exportedValues$parameter]] = list(transformation = input$transformation, w = input$logicle_w, t = 10^input$logicle_t, m = input$logicle_m, a = input$logicle_a)
+
+      } else if(input$transformation == "Biexponential")
+      {
+
+        totalParametersToExport[[exportedValues$parameter]] = list(transformation = input$transformation, a = input$biexp_a, b = input$biexp_b, c = input$biexp_c, d = input$biexp_d, f = input$biexp_f, w = input$biexp_w)
+
+      } else if(input$transformation == "Arcsinh")
+      {
+
+        totalParametersToExport[[exportedValues$parameter]] = list(transformation = input$transformation, a = input$arcsinh_a, b = input$arcsinh_b, c = input$arcsinh_c)
+
+      } else
+      {
+
+        totalParametersToExport[[exportedValues$parameter]] = list(transformation = input$transformation, w = input$logicle_w, t = 10^input$logicle_t, m = input$logicle_m, a = input$logicle_a)
+
+      }
+
+
+      saveRDS(totalParametersToExport, fileExistsToCheckRds)
 
       output$status_parameter = shiny::renderText("Status: saved")
 
@@ -329,49 +600,61 @@ launchManualLogicleShinyApp = function(fs_shiny = NULL)
       output$status_parameter = shiny::renderText("Status: unsaved")
     })
 
-    shiny::observeEvent(input$export_txt, {
+    shiny::observeEvent(input$export_rds, {
       exportedValues = shiny::reactiveValuesToList(input)
 
-      if (file.exists(file.path("rds", "parameters.rds")))
+
+
+
+        fileExistsToCheckRds = file.path("rds", "parametersTransformations.rds")
+
+
+
+      if (file.exists(fileExistsToCheckRds))
       {
-        totalParametersToExport = readRDS(file.path("rds", "parameters.rds"))
+        totalParametersToExport = readRDS(fileExistsToCheckRds)
 
-        res = data.frame(matrix(0, ncol = length(totalParametersToExport), nrow = 4), stringsAsFactors = FALSE)
-        rownames(res) = names(totalParametersToExport[[1]])
-        colnames(res) = names(totalParametersToExport)
+        saveRDS(totalParametersToExport, file.path("output", "1_Transformation", "parametersTransformations.rds"))
 
-        foreach::foreach(a = 1:length(totalParametersToExport)) %do%
-        {
-          currentParameterDataName = names(totalParametersToExport)[a]
 
-          foreach::foreach(b = 1:length(totalParametersToExport[[a]])) %do%
-          {
-            currentParameterSubdataValue = totalParametersToExport[[a]][b]
-            currentParameterSubdataName = names(totalParametersToExport[[a]])[b]
-            res[currentParameterSubdataName, currentParameterDataName] = as.numeric(currentParameterSubdataValue)
-          }
-        }
+        # res = data.frame(matrix(0, ncol = length(totalParametersToExport), nrow = length(totalParametersToExport[[1]])), stringsAsFactors = FALSE)
+        # rownames(res) = names(totalParametersToExport[[1]])
+        # colnames(res) = names(totalParametersToExport)
+        #
+        # foreach::foreach(a = 1:length(totalParametersToExport)) %do%
+        # {
+        #   currentParameterDataName = names(totalParametersToExport)[a]
+        #
+        #   foreach::foreach(b = 1:length(totalParametersToExport[[a]])) %do%
+        #   {
+        #     currentParameterSubdataValue = totalParametersToExport[[a]][b]
+        #     currentParameterSubdataName = names(totalParametersToExport[[a]])[b]
+        #     res[currentParameterSubdataName, currentParameterDataName] = as.numeric(currentParameterSubdataValue)
+        #   }
+        # }
+        #
+        # print(res)
 
-        print(res)
-
-        res = cbind(rownames(res), res)
-        colnames(res)[1] = "parameter"
-        utils::write.table(res, file.path("output", "1_Transformation", "parametersLogicle.txt"), quote = FALSE, col.names = TRUE, row.names = FALSE, sep = "\t")
+        # res = cbind(rownames(res), res)
+        # colnames(res)[1] = "parameter"
+        # utils::write.table(res, fileExistsToCheckTxt, quote = TRUE, col.names = TRUE, row.names = FALSE, sep = "\t")
       }
     })
 
     shiny::observeEvent(input$clear_all, {
       exportedValues = shiny::reactiveValuesToList(input)
 
-      if (file.exists(file.path("rds", "parameters.rds")))
+
+      if (file.exists(file.path("output", "1_Transformation", "parametersTransformations.rds")))
       {
-        unlink(file.path("rds", "parameters.rds"))
+        unlink(file.path("output", "1_Transformation", "parametersTransformations.rds"))
       }
 
-      if (file.exists(file.path("output", "1_Transformation", "parametersLogicle.txt")))
+      if (file.exists(file.path("rds", "parametersTransformations.rds")))
       {
-        unlink(file.path("output", "1_Transformation", "parametersLogicle.txt"))
+        unlink(file.path("rds", "parametersTransformations.rds"))
       }
+
 
       output$status_parameter = shiny::renderText("Status: unsaved")
     })
@@ -386,9 +669,7 @@ launchManualLogicleShinyApp = function(fs_shiny = NULL)
 #'
 #' @param parametersToTransform A vector of all parameters to transform in each `rds` file. Defaults to `NULL`.
 #'
-#' @param transformationMethod A string defining the transformation method to apply. It can be either `logicle` or `biexp`. Defaults to `logicle`.
-#'
-#' Please note that the `logicle` transformation needs a file generated using the `manualLogicle` R Shiny application which contains the parameters of the `logicle` transformation to be used for each parameter. The `biexp` transformation does not need this file and can be directly applied.
+#' Please note that this function needs the `parametersTransformations.rds` file located in the `output > 1_Transformation` directory which is generated using the `transformationTuning` R Shiny application. This file contains the type as well as the parameters of the transformation of interest to be used for each flow cytometry parameter in the dataset.
 #'
 #' @return Generated `rds` files are saved to `rds` directory, overwriting the previous ones.
 #'
@@ -397,7 +678,7 @@ launchManualLogicleShinyApp = function(fs_shiny = NULL)
 #'
 #' @export
 
-transformData = function(parametersToTransform = NULL, transformationMethod = "logicle")
+transformData = function(parametersToTransform = NULL)
 {
   a = NULL
   b = NULL
@@ -424,28 +705,56 @@ transformData = function(parametersToTransform = NULL, transformationMethod = "l
     totalErrors = 0
     totalErrorsParameters = NULL
 
+    transformationsParameters = readRDS(file.path("output", "1_Transformation", "parametersTransformations.rds"))
+
     foreach::foreach(b = 1:length(parametersToTransform)) %do%
     {
       currentParameterToTransform = parametersToTransform[b]
 
-      if (transformationMethod == "logicle")
-      {
-        parametersLogicle = utils::read.table(file.path("output", "1_Transformation", "parametersLogicle.txt"), header = FALSE, as.is = TRUE, sep = "\t")
-        rownames(parametersLogicle) = parametersLogicle[, 1]
-        colnames(parametersLogicle) = parametersLogicle[1, ]
-        parametersLogicle = parametersLogicle[-1, -1]
-        parametersLogicle = parametersLogicle[, order(colnames(parametersLogicle))]
+      currentParametersTransformationParameters = transformationsParameters[[currentParameterToTransform]]
+      currentParameterTransformationMethod = currentParametersTransformationParameters$transformation
 
-        currentParameter_w = as.numeric(parametersLogicle["w", currentParameterToTransform])
-        currentParameter_m = as.numeric(parametersLogicle["m", currentParameterToTransform])
-        currentParameter_t = as.numeric(parametersLogicle["t", currentParameterToTransform])
-        currentParameter_a = as.numeric(parametersLogicle["a", currentParameterToTransform])
+      if (currentParameterTransformationMethod == "Logicle")
+      {
+
+        currentParameter_w = as.numeric(currentParametersTransformationParameters$"w")
+        currentParameter_m = as.numeric(currentParametersTransformationParameters$"m")
+        currentParameter_t = as.numeric(currentParametersTransformationParameters$"t")
+        currentParameter_a = as.numeric(currentParametersTransformationParameters$"a")
 
         decidedTransform = flowCore::logicleTransform(w = currentParameter_w, t = currentParameter_t, m = currentParameter_m, a = currentParameter_a)
         decidedTransformList = flowCore::transformList(currentParameterToTransform, decidedTransform)
-      } else if (transformationMethod == "biexp")
+      } else if (currentParameterTransformationMethod == "Biexponential")
       {
-        decidedTransform = flowWorkspace::flowjo_biexp(channelRange = 1e+06, maxValue = 262144, pos = 6, neg = 0.25, widthBasis = customWidthBasis)
+        currentParameter_a = as.numeric(currentParametersTransformationParameters$"a")
+        currentParameter_b = as.numeric(currentParametersTransformationParameters$"b")
+        currentParameter_c = as.numeric(currentParametersTransformationParameters$"c")
+        currentParameter_d = as.numeric(currentParametersTransformationParameters$"d")
+        currentParameter_f = as.numeric(currentParametersTransformationParameters$"f")
+        currentParameter_w = as.numeric(currentParametersTransformationParameters$"w")
+
+        decidedTransform = flowCore::biexponentialTransform(a = currentParameter_a, b = currentParameter_b, c = currentParameter_c, d = currentParameter_d, f = currentParameter_f, w = currentParameter_w)
+        decidedTransformList = flowCore::transformList(currentParameterToTransform, decidedTransform)
+
+      } else if (currentParameterTransformationMethod == "Arcsinh")
+      {
+
+        currentParameter_a = as.numeric(currentParametersTransformationParameters$"a")
+        currentParameter_b = as.numeric(currentParametersTransformationParameters$"b")
+        currentParameter_c = as.numeric(currentParametersTransformationParameters$"c")
+
+        decidedTransform = flowCore::arcsinhTransform(a = currentParameter_a, b = currentParameter_b, c = currentParameter_c)
+        decidedTransformList = flowCore::transformList(currentParameterToTransform, decidedTransform)
+
+      } else
+      {
+
+        currentParameter_w = as.numeric(currentParametersTransformationParameters$"w")
+        currentParameter_m = as.numeric(currentParametersTransformationParameters$"m")
+        currentParameter_t = as.numeric(currentParametersTransformationParameters$"t")
+        currentParameter_a = as.numeric(currentParametersTransformationParameters$"a")
+
+        decidedTransform = flowCore::logicleTransform(w = currentParameter_w, t = currentParameter_t, m = currentParameter_m, a = currentParameter_a)
         decidedTransformList = flowCore::transformList(currentParameterToTransform, decidedTransform)
       }
 

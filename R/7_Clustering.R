@@ -252,7 +252,7 @@ plotUMAP_projectionTraining = function(dataTrainingClustered = NULL, datasetFold
 #'
 #' @param dataValidation A data frame containing the validation dataset. Defaults to `NULL`.
 #'
-#' @param parametersToUse An vector defining the parameters to use for the model application. Defaults to `NULL`.
+#' @param parametersToUse A vector defining the parameters to use for the model application. Defaults to `NULL`.
 #'
 #' @param coresNumber An integer defining the number of cores to use to apply the clustering model. Defaults to `1`.
 #'
@@ -392,7 +392,7 @@ determineParameterThreshold = function(data = NULL, parameter = NULL, displayedC
 #'
 #' @param datasetFolder A string defining in which folder to save the results. It can be either `full` for the full downsampled dataset, `training` for the training downsampled subdataset or `validation` for the validation downsampled subdataset. The value must match the origin of the data used. Defaults to `full`.
 #'
-#' @return Generated rds file is saved to `output > 7_Clustering` directory.
+#' @return Generated rds file is saved to `rds` directory.
 #'
 #' @importFrom foreach %do%
 #'
@@ -585,33 +585,48 @@ exportClustersStatsAndPlots = function(data = NULL, folder = NULL, parametersToU
 
     grDevices::dev.off()
 
-    currentCluster_data_plot_training = currentCluster_data[currentCluster_data$clusteringGroup == "training", ]
-
-    if (nrow(currentCluster_data_plot_training) > maxCellsPerPlot)
+    if(nrow(currentCluster_data[currentCluster_data$clusteringGroup == "training", ]) > 0)
     {
-      currentCluster_data_plot_training = currentCluster_data_plot_training[sample(rownames(currentCluster_data_plot_training), maxCellsPerPlot), ]
+
+      currentCluster_data_plot_training = currentCluster_data[currentCluster_data$clusteringGroup == "training", ]
+
+      if (nrow(currentCluster_data_plot_training) > maxCellsPerPlot)
+      {
+        currentCluster_data_plot_training = currentCluster_data_plot_training[sample(rownames(currentCluster_data_plot_training), maxCellsPerPlot), ]
+      }
+
+      grDevices::pdf(file.path("output", "7_Clustering", datasetFolder, folder, paste(prefix, "_C", currentCluster, sep = ""), paste("Cluster-", paste(prefix, "_C", currentCluster, sep = ""), "_Training.pdf", sep = "")))
+
+      plot = ggplot2::ggplot(currentCluster_data_plot_training, ggplot2::aes(x = UMAP_2, y = UMAP_1)) + ggplot2::geom_point(alpha = 0.25) + ggplot2::xlim(minX, maxX) + ggplot2::ylim(minY, maxY)
+      print(plot)
+
+      grDevices::dev.off()
+
     }
 
-    currentCluster_data_plot_validation = currentCluster_data[currentCluster_data$clusteringGroup == "validation", ]
 
-    if (nrow(currentCluster_data_plot_validation) > maxCellsPerPlot)
+    if(nrow(currentCluster_data[currentCluster_data$clusteringGroup == "validation", ]) > 0)
     {
-      currentCluster_data_plot_validation = currentCluster_data_plot_validation[sample(rownames(currentCluster_data_plot_validation), maxCellsPerPlot), ]
+      currentCluster_data_plot_validation = currentCluster_data[currentCluster_data$clusteringGroup == "validation", ]
+
+      if (nrow(currentCluster_data_plot_validation) > maxCellsPerPlot)
+      {
+        currentCluster_data_plot_validation = currentCluster_data_plot_validation[sample(rownames(currentCluster_data_plot_validation), maxCellsPerPlot), ]
+      }
+
+
+
+      grDevices::pdf(file.path("output", "7_Clustering", datasetFolder, folder, paste(prefix, "_C", currentCluster, sep = ""), paste("Cluster-", paste(prefix, "_C", currentCluster, sep = ""), "_Validation.pdf", sep = "")))
+
+      plot = ggplot2::ggplot(currentCluster_data_plot_validation, ggplot2::aes(x = UMAP_2, y = UMAP_1)) + ggplot2::geom_point(alpha = 0.25) + ggplot2::xlim(minX, maxX) + ggplot2::ylim(minY, maxY)
+      print(plot)
+
+      grDevices::dev.off()
+
     }
 
-    grDevices::pdf(file.path("output", "7_Clustering", datasetFolder, folder, paste(prefix, "_C", currentCluster, sep = ""), paste("Cluster-", paste(prefix, "_C", currentCluster, sep = ""), "_Training.pdf", sep = "")))
 
-    plot = ggplot2::ggplot(currentCluster_data_plot_training, ggplot2::aes(x = UMAP_2, y = UMAP_1)) + ggplot2::geom_point(alpha = 0.25) + ggplot2::xlim(minX, maxX) + ggplot2::ylim(minY, maxY)
-    print(plot)
 
-    grDevices::dev.off()
-
-    grDevices::pdf(file.path("output", "7_Clustering", datasetFolder, folder, paste(prefix, "_C", currentCluster, sep = ""), paste("Cluster-", paste(prefix, "_C", currentCluster, sep = ""), "_Validation.pdf", sep = "")))
-
-    plot = ggplot2::ggplot(currentCluster_data_plot_validation, ggplot2::aes(x = UMAP_2, y = UMAP_1)) + ggplot2::geom_point(alpha = 0.25) + ggplot2::xlim(minX, maxX) + ggplot2::ylim(minY, maxY)
-    print(plot)
-
-    grDevices::dev.off()
 
     currentCluster_percentages = NULL
     currentCluster_samples = NULL
@@ -766,19 +781,97 @@ exportClustersStatsAndPlots = function(data = NULL, folder = NULL, parametersToU
 #'
 #' @export
 
-plotUMAP_projectionCollapsed = function(data = NULL, displayedCells = 1e+05, datasetFolder = "full")
+plotUMAP_projectionFinalClusters = function(data = NULL, displayedCells = 1e+05, datasetFolder = "full")
 {
   UMAP_1 = NULL
   UMAP_2 = NULL
   cluster = NULL
 
+  if (dir.exists(file.path("output", "7_Clustering", datasetFolder)) == FALSE)
+  {
+    dir.create(file.path("output", "7_Clustering", datasetFolder))
+  }
+
+
   clusterizedFullData_collapsed_plot = data[sample(1:nrow(data), displayedCells), ]
   p = ggplot2::ggplot(clusterizedFullData_collapsed_plot, ggplot2::aes(x = UMAP_2, y = UMAP_1, color = as.character(cluster))) +
     ggplot2::geom_point(size = 0.75, alpha = 0.5, show.legend = FALSE)
 
-  grDevices::pdf(file.path("output", "7_Clustering", datasetFolder, paste("clustersProjectionUMAP_allData_collapsed.pdf", sep = "")))
+  grDevices::pdf(file.path("output", "7_Clustering", datasetFolder, paste("clustersProjectionUMAP_allData_final.pdf", sep = "")))
   print(p)
   grDevices::dev.off()
+}
+
+#' Perform FlowSOM clustering
+#'
+#' This function allows to perform FlowSOM clustering algorithm on the dataset and parameters of interest.
+#'
+#' @param data A data frame containing the dataset to use. Defaults to `NULL`.
+#'
+#' @param parametersToUse A vector defining the parameters to use for the clustering. Defaults to `NULL`.
+#'
+#' @param seed An integer defining the seed to use to obtain reproducible results. Defaults to `NULL`.
+#'
+#' @param maxMeta An integer defining the maximum number of clusters to generate. Please note that FlowSOM cannot algorithm cannot exceed 90 clusters maximum. However, FlowSOM will surely output way less than this number, depending on the dataset of interest. Defaults to `90`.
+#'
+#' @param datasetFolder A string defining in which folder to save the results. It can be either `full` for the full downsampled dataset, `training` for the training downsampled subdataset or `validation` for the validation downsampled subdataset. The value must match the origin of the data used. Defaults to `full`.
+#'
+#' @return Generated rds file is saved to `rds` directory.
+#'
+#' @export
+
+FlowSOM_clustering = function(data = NULL, parametersToUse = NULL, seed = NULL, maxMeta = 90, datasetFolder = "full")
+{
+
+  FlowSOM_output = FlowSOM::FlowSOM(input = as.matrix(data[, parametersToUse]), compensate = FALSE, transform = FALSE, scale = FALSE, silent = FALSE, seed = seed, maxMeta = maxMeta)
+
+
+  FlowSOM_clustering = as.numeric(FlowSOM::GetMetaclusters(FlowSOM_output))
+
+  print(paste("FlowSOM identified ", length(unique(FlowSOM_clustering)), " clusters within the dataset.", sep = ""))
+
+  data$cluster = FlowSOM_clustering
+  data$clusteringGroup = "validation"
+
+  saveRDS(data, file.path("rds", paste("7_Clustered_", datasetFolder, ".rds", sep = "")))
+
+  return(data)
+}
+
+#' Perform PhenoGraph clustering
+#'
+#' This function allows to perform PhenoGraph clustering algorithm on the dataset and parameters of interest.
+#'
+#' @param data A data frame containing the dataset to use. Defaults to `NULL`.
+#'
+#' @param parametersToUse A vector defining the parameters to use for the clustering. Defaults to `NULL`.
+#'
+#' @param k An integer defining the maximum number of clusters to generate. PhenoGraph will surely output way less than this number, depending on the dataset of interest. Defaults to `100`.
+#'
+#' @param coresNumber An integer defining the number of cores to use to apply the clustering model. Defaults to `1`.
+#'
+#' @param datasetFolder A string defining in which folder to save the results. It can be either `full` for the full downsampled dataset, `training` for the training downsampled subdataset or `validation` for the validation downsampled subdataset. The value must match the origin of the data used. Defaults to `full`.
+#'
+#' @return Generated rds file is saved to `rds` directory.
+#'
+#' @export
+
+FastPhenoGraph_clustering = function(data = NULL, parametersToUse = NULL, k = 100, coresNumber = 1, datasetFolder = "full")
+{
+
+
+  FastPhenoGraph_output = FastPG::fastCluster(as.matrix(data[, parametersToUse]), k, num_threads = coresNumber, verbose = TRUE)
+
+  FastPhenoGraph_clustering = as.numeric(FastPhenoGraph_output$communities)
+
+  data$cluster = FastPhenoGraph_clustering
+  data$clusteringGroup = "validation"
+
+
+  saveRDS(data, file.path("rds", paste("7_Clustered_", datasetFolder, ".rds", sep = "")))
+
+  return(data)
+
 }
 
 #' Export information about clusters phenotype
@@ -787,7 +880,7 @@ plotUMAP_projectionCollapsed = function(data = NULL, displayedCells = 1e+05, dat
 #'
 #' @param prefix A string defining the prefix of the clusters phenotypes file to use. Defaults to `NULL`.
 #'
-#' @param thresholds A data frame defining the thresholds for each parameter. Defaults to `NULL`.
+#' @param thresholds (Optional) A data frame defining the thresholds for each parameter. If set to `NULL`, then binary heatmaps will not be generated. Thresholds values for each parameter are typically obtained when the user chooses the hierarchical clustering + k-nearest neighbors approach for cell clustering. however, the user can still provide these thresholds by following the subsection called "Determine binary thresholds" detailed in the tutorial. Defaults to `NULL`.
 #'
 #' @param metricUsed A string defining the metric to use for statistics computation. It can be either `mean` or `median`. Defaults to `median`.
 #'
@@ -867,45 +960,51 @@ clustersPhenotypesHeatmap = function(prefix = NULL, thresholds = NULL, metricUse
 
   utils::write.table(totalClustersPhenotypes_exported, file = file.path("output", "7_Clustering", datasetFolder, paste("heatmap_clustersPhenotypes_data.txt", sep = "")), quote = FALSE, col.names = TRUE, sep = "\t", row.names = FALSE)
 
-  totalClustersPhenotypes_binary = totalClustersPhenotypes_unscaled
-
-  foreach::foreach(a = 1:nrow(totalClustersPhenotypes_binary)) %do%
+  if(thresholds != NULL)
   {
-    currentRowData = totalClustersPhenotypes_binary[a, ]
-    currentThreshold = thresholds[a]
 
-    currentRowData[currentRowData < currentThreshold] = 0
-    currentRowData[currentRowData >= currentThreshold] = 1
+    totalClustersPhenotypes_binary = totalClustersPhenotypes_unscaled
 
-    totalClustersPhenotypes_binary[a, ] = currentRowData
+    foreach::foreach(a = 1:nrow(totalClustersPhenotypes_binary)) %do%
+      {
+        currentRowData = totalClustersPhenotypes_binary[a, ]
+        currentThreshold = thresholds[a]
+
+        currentRowData[currentRowData < currentThreshold] = 0
+        currentRowData[currentRowData >= currentThreshold] = 1
+
+        totalClustersPhenotypes_binary[a, ] = currentRowData
+      }
+
+    min = min(totalClustersPhenotypes_binary, na.rm = TRUE)
+    max = max(totalClustersPhenotypes_binary, na.rm = TRUE)
+
+    if (metricUsed == "mean")
+    {
+      middle = mean(totalClustersPhenotypes_binary, na.rm = TRUE)
+    } else if (metricUsed == "median")
+    {
+      middle = stats::median(totalClustersPhenotypes_binary, na.rm = TRUE)
+    } else
+    {
+      middle = mean(totalClustersPhenotypes_binary, na.rm = TRUE)
+    }
+
+    grDevices::pdf(file = file.path("output", "7_Clustering", datasetFolder, paste("heatmap_clustersPhenotypes_binary.pdf", sep = "")), bg = "transparent", width = 20, height = 10, paper = "a4r")
+
+    gplots::heatmap.2(totalClustersPhenotypes_binary, trace = "none", scale = "none", key = TRUE, keysize = 1, density.info = "none", col = c("blue", "yellow"), cexRow = 0.5, cexCol = 0.5, margins = c(6, 8), dendrogram = "both")
+
+    grDevices::dev.off()
+
+    totalClustersPhenotypes_binary_exported = totalClustersPhenotypes_binary
+
+    totalClustersPhenotypes_binary_exported = cbind(rownames(totalClustersPhenotypes_binary_exported), totalClustersPhenotypes_binary_exported)
+    colnames(totalClustersPhenotypes_binary_exported)[1] = "Markers"
+
+    utils::write.table(totalClustersPhenotypes_binary_exported, file = file.path("output", "7_Clustering", datasetFolder, paste("heatmap_clustersPhenotypes_binary_data.txt", sep = "")), quote = FALSE, col.names = TRUE, sep = "\t", row.names = FALSE)
   }
 
-  min = min(totalClustersPhenotypes_binary, na.rm = TRUE)
-  max = max(totalClustersPhenotypes_binary, na.rm = TRUE)
 
-  if (metricUsed == "mean")
-  {
-    middle = mean(totalClustersPhenotypes_binary, na.rm = TRUE)
-  } else if (metricUsed == "median")
-  {
-    middle = stats::median(totalClustersPhenotypes_binary, na.rm = TRUE)
-  } else
-  {
-    middle = mean(totalClustersPhenotypes_binary, na.rm = TRUE)
-  }
-
-  grDevices::pdf(file = file.path("output", "7_Clustering", datasetFolder, paste("heatmap_clustersPhenotypes_binary.pdf", sep = "")), bg = "transparent", width = 20, height = 10, paper = "a4r")
-
-  gplots::heatmap.2(totalClustersPhenotypes_binary, trace = "none", scale = "none", key = TRUE, keysize = 1, density.info = "none", col = c("blue", "yellow"), cexRow = 0.5, cexCol = 0.5, margins = c(6, 8), dendrogram = "both")
-
-  grDevices::dev.off()
-
-  totalClustersPhenotypes_binary_exported = totalClustersPhenotypes_binary
-
-  totalClustersPhenotypes_binary_exported = cbind(rownames(totalClustersPhenotypes_binary_exported), totalClustersPhenotypes_binary_exported)
-  colnames(totalClustersPhenotypes_binary_exported)[1] = "Markers"
-
-  utils::write.table(totalClustersPhenotypes_binary_exported, file = file.path("output", "7_Clustering", datasetFolder, paste("heatmap_clustersPhenotypes_binary_data.txt", sep = "")), quote = FALSE, col.names = TRUE, sep = "\t", row.names = FALSE)
 }
 
 #' Export information about clusters abundance
