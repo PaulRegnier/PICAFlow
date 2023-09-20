@@ -44,7 +44,7 @@ poolData = function(flowSet = NULL, groupVector = NULL, parametersToKeep = NULL,
   uniqueGroups = unique(groupVector)
   totalDataList = rep(list(NULL), length(uniqueGroups))
   discardedSamplesWhenSampling = NULL
-  
+
 
   totalSamplesSizes = NULL
   totalSamplesNames = NULL
@@ -86,17 +86,17 @@ poolData = function(flowSet = NULL, groupVector = NULL, parametersToKeep = NULL,
       totalSamplesNames = c(totalSamplesNames, currentSampleName)
 
       totalSamplesGroups = c(totalSamplesGroups, currentGroupID)
-     
+
     }
-	
+
 	samplesToRemoveID = which(totalSamplesSizes == 0)
 	samplesToRemoveNames = c(samplesToRemoveNames, totalSamplesNames[samplesToRemoveID])
-	
+
 	if(length(samplesToRemoveID) > 0)
 	{
-	
-	
-	
+
+
+
 	currentGroupDataList = currentGroupDataList[-c(samplesToRemoveID)]
 	totalSamplesSizes = totalSamplesSizes[-c(samplesToRemoveID)]
 
@@ -117,20 +117,20 @@ poolData = function(flowSet = NULL, groupVector = NULL, parametersToKeep = NULL,
   }
 
   close(pb)
-  
-  
+
+
   if(length(samplesToRemoveNames) == 1)
 	{
 		outputMessage = c(outputMessage, paste("## Prior to any downsampling, the following sample was discarded because there were no cells remaining in the associated flowSet: ", samplesToRemoveNames, " ##", sep = ""))
 
 	}
-	
+
 	if(length(samplesToRemoveNames) > 1)
 	{
 		outputMessage = c(outputMessage, paste("## Prior to any downsampling, the following samples were discarded because there were no cells remaining in the associated flowSets: ", paste(samplesToRemoveNames, collapse = ", "), " ##", sep = ""))
 
 	}
-  
+
 
   if (estimateThreshold == TRUE)
   {
@@ -147,7 +147,7 @@ poolData = function(flowSet = NULL, groupVector = NULL, parametersToKeep = NULL,
   progress = function(n) utils::setTxtProgressBar(pb, n)
   opts = list(progress = progress)
 
-  estimateThresholdTable = foreach::foreach(z = thresholdsToTest, .packages = c("foreach", "tcltk"), .combine = "c", .options.snow = opts) %dopar%
+  estimateThresholdTable = foreach::foreach(z = thresholdsToTest, .packages = c("foreach", "tcltk"), .options.snow = opts) %dopar%
   {
     editedTotalDataList = totalDataList
 
@@ -179,23 +179,36 @@ poolData = function(flowSet = NULL, groupVector = NULL, parametersToKeep = NULL,
 
     totalSamplesMinSizes = vector(mode = "list", length = length(editedTotalDataList))
     totalGroupsMinSizes = vector(mode = "list", length = length(editedTotalDataList))
+
+    x = NULL
+
     foreach::foreach(x = 1:length(editedTotalDataList)) %do%
     {
       currentGroupData = editedTotalDataList[[x]]
 
-      currentGroupSamplesUnique = unique(currentGroupData$name)
-
-      currentGroupLengths = vector(mode = "list", length = length(currentGroupSamplesUnique))
-      foreach::foreach(y = 1:length(currentGroupSamplesUnique)) %do%
+      if(nrow(currentGroupData) > 0)
       {
-        currentSampleName = currentGroupSamplesUnique[y]
 
-        currentSampleAssociatedLength = nrow(currentGroupData[currentGroupData$name == currentSampleName, ])
-        currentGroupLengths[[y]] = currentSampleAssociatedLength
+        currentGroupSamplesUnique = unique(currentGroupData$name)
+
+        currentGroupLengths = vector(mode = "list", length = length(currentGroupSamplesUnique))
+        foreach::foreach(y = 1:length(currentGroupSamplesUnique)) %do%
+          {
+            currentSampleName = currentGroupSamplesUnique[y]
+
+            currentSampleAssociatedLength = nrow(currentGroupData[currentGroupData$name == currentSampleName, ])
+            currentGroupLengths[[y]] = currentSampleAssociatedLength
+          }
+
+        totalSamplesMinSizes[[x]] = min(unlist(currentGroupLengths))
+        totalGroupsMinSizes[[x]] = min(unlist(currentGroupLengths)) * length(currentGroupSamplesUnique)
+      } else
+      {
+
+        totalSamplesMinSizes[[x]] = 0
+        totalGroupsMinSizes[[x]] = 0
       }
 
-      totalSamplesMinSizes[[x]] = min(unlist(currentGroupLengths))
-      totalGroupsMinSizes[[x]] = min(unlist(currentGroupLengths)) * length(currentGroupSamplesUnique)
     }
 
     totalSamplesMinSizes = as.vector(unlist(totalSamplesMinSizes))
@@ -224,6 +237,8 @@ poolData = function(flowSet = NULL, groupVector = NULL, parametersToKeep = NULL,
       finalGroupsRealNumbers = 0
       downsampledDataset = list()
 
+      u = NULL
+
       foreach::foreach(u = 1:length(editedTotalDataList)) %do%
       {
         currentGroupData = editedTotalDataList[[u]]
@@ -245,6 +260,8 @@ poolData = function(flowSet = NULL, groupVector = NULL, parametersToKeep = NULL,
 
           currentGroupDownsamplingFactor = (currentGroupDownsamplingFactor * (maxCellsNb/length(editedTotalDataList)))/currentGroupFinalCellsNumber
         }
+
+        v = 0
 
         foreach::foreach(v = 1:currentGroupLength) %do%
         {
@@ -281,36 +298,72 @@ poolData = function(flowSet = NULL, groupVector = NULL, parametersToKeep = NULL,
       currentThresholdResult = list(c(downsampleMinEvents, NULL), NULL, NULL)
     }
 
-    return(list(data = currentThresholdResult, message = outputMessage))
+    currentOutput = list(data = currentThresholdResult, message = outputMessage)
+
+    return(currentOutput)
   }
 
   close(pb)
 
   parallel::stopCluster(cl)
 
-  outputMessage = estimateThresholdTable$message
-  estimateThresholdTable = estimateThresholdTable$data
+  totalResultsThresholdsList = data.frame(matrix(0, nrow = length(estimateThresholdTable), ncol = 2))
+  totalResultsMessagesList = NULL
+  colnames(totalResultsThresholdsList) = c("Threshold", "TotalCellsNumbersRetained")
 
-  editedTotalDataList_ID = seq(1, length(estimateThresholdTable), 3) + 1
-  editedTotalDataList = estimateThresholdTable[[editedTotalDataList_ID]]
+  totalResultsEditedTotalDataList = list()
+  totalResultsDeletedDataNotSampledList = list()
 
-  deletedDataNotSampledList_ID = seq(1, length(estimateThresholdTable), 3) + 2
-  deletedDataNotSampledList = estimateThresholdTable[[deletedDataNotSampledList_ID]]
+  foreach(o = 1:length(estimateThresholdTable)) %do%
+    {
+      currentResultsList = estimateThresholdTable[[o]]
 
-  estimateThresholdTable_ID = seq(1, length(estimateThresholdTable), 3)
-  estimateThresholdTable = do.call(rbind.data.frame, estimateThresholdTable[estimateThresholdTable_ID])
 
-  colnames(estimateThresholdTable) = c("Threshold", "TotalCellsNumbersRetained")
+      outputMessage = currentResultsList$message
+      currentResultsList = currentResultsList$data
+
+
+      editedTotalDataList = currentResultsList[[2]]
+
+      if(length(editedTotalDataList) == 0)
+      {
+
+        editedTotalDataList = NULL
+      }
+
+      totalResultsEditedTotalDataList[[o]] = editedTotalDataList
+
+      deletedDataNotSampledList = currentResultsList[[3]]
+
+      if(length(deletedDataNotSampledList) == 0)
+      {
+
+        deletedDataNotSampledList = NULL
+      }
+
+      totalResultsDeletedDataNotSampledList[[o]] = deletedDataNotSampledList
+
+      currentThresholdList = currentResultsList[[1]]
+
+
+      if(length(currentThresholdList) == 0)
+      {
+
+        currentThresholdList = c(0, 0)
+      }
+
+      totalResultsThresholdsList[o, ] = currentThresholdList
+    }
 
   if (estimateThreshold == FALSE)
   {
-    totalDataSampled = do.call(rbind.data.frame, editedTotalDataList)
-    colnames(totalDataSampled) = as.vector(colnames(editedTotalDataList[[1]]))
+    totalDataSampled = do.call(rbind.data.frame, totalResultsEditedTotalDataList[[1]])
+    colnames(totalDataSampled) = as.vector(colnames(totalResultsEditedTotalDataList[[1]][[1]]))
     rownames(totalDataSampled) = NULL
     totalDataSampled$state = "sampled"
 
-    totalDataNotSampled = do.call(rbind.data.frame, deletedDataNotSampledList)
-    colnames(totalDataNotSampled) = as.vector(colnames(deletedDataNotSampledList[[1]]))
+    totalDataNotSampled = do.call(rbind.data.frame, totalResultsDeletedDataNotSampledList[[1]])
+    colnames(totalDataNotSampled) = as.vector(colnames(totalResultsDeletedDataNotSampledList[[1]][[1]]))
     rownames(totalDataNotSampled) = NULL
 
     totalDataNotSampled$state = "notSampled"
@@ -361,12 +414,12 @@ poolData = function(flowSet = NULL, groupVector = NULL, parametersToKeep = NULL,
 
   if (estimateThreshold == TRUE)
   {
-    y = estimateThresholdTable$TotalCellsNumbersRetained
-    x = estimateThresholdTable$Threshold
+    y = totalResultsThresholdsList$TotalCellsNumbersRetained
+    x = totalResultsThresholdsList$Threshold
     mod = stats::loess(y ~ x, span = 0.25)
     yfit = stats::predict(mod, newdata = x)
 
-    grDevices::pdf(file.path("output", "3_Gating", "CutThreshold-vs-FinalDatasetCellNumber.pdf"))
+    grDevices::pdf(file.path("output", "4_Downsampling", "CutThreshold-vs-FinalDatasetCellNumber.pdf"))
 
     plot(x, y, xlab = "Cut threshold", ylab = "Final dataset cell number")
     graphics::grid(NULL, NULL)
