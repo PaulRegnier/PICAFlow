@@ -13,7 +13,8 @@ UMAP_clusters(
   returnUMAPData = FALSE,
   computeUMAP = TRUE,
   seedValue = 42,
-  plotHighlightedFeatureItems = TRUE
+  plotHighlightedFeatureItems = TRUE,
+  drawEllipses = TRUE
 )
 }
 \arguments{
@@ -34,6 +35,8 @@ UMAP_clusters(
 \item{seedValue}{An integer defining the seed value to use for UMAP computation. Setting a seed helps to obtain reproducible UMAP plots. Defaults to \code{42}.}
 
 \item{plotHighlightedFeatureItems}{A boolean defining if UMAP plots displaying highlighted items of the selected \code{feature} should also be generated or not. Defaults to \code{TRUE}.}
+
+\item{drawEllipses}{A boolean defining if ellipses on UMAP plots should be drawn or not. Defaults to \code{TRUE}.}
 }
 \value{
 A list of length 2: the \code{dataSubset} element containing a data frame of the desired columns of interest and the \code{dataRemoved} element containing the remaining columns of the dataset. Generated PDF files are saved to \verb{output > 8_Analysis} directory.

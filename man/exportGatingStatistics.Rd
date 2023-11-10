@@ -4,10 +4,12 @@
 \alias{exportGatingStatistics}
 \title{Export gating statistics}
 \usage{
-exportGatingStatistics(totalStats = NULL)
+exportGatingStatistics(totalStats = NULL, filename = "gatingStatistics")
 }
 \arguments{
 \item{totalStats}{A list of gating statistics generated with the \code{gateData()} method. Defaults to \code{NULL}.}
+
+\item{filename}{A character vector defining the custom file name to use for the gating statistics to export. Defaults to \code{gatingStatistics}.}
 }
 \value{
 Generated text file is saved to \verb{output > 3_Gating} directory.

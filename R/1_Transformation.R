@@ -4,21 +4,28 @@
 #'
 #' @param suffix A character string eventually used to select some `rds` files to merge. Defaults to `NULL`.
 #'
+#' @param useStructureFromReferenceSample A numeric specifying the sample number to use as reference for channel order and description. Setting this to a value > 0 will reorder each channel and overwrite the descriptions for each flowFrame according to the reference sample. Defaults to `0`, which prevents any reordering and overwriting.
+#'
 #' @return Generated `rds` file is saved to `rds` directory.
 #'
 #' @importFrom foreach %do%
 #'
 #' @export
 
-mergeSamples = function(suffix = NULL)
+mergeSamples = function(suffix = NULL, useStructureFromReferenceSample = 0)
 {
   a = NULL
+
+  if(file.exists(file.path("rds", "pooledSamples.rds")) == TRUE)
+  {
+
+    unlink(file.path("rds", "pooledSamples.rds"))
+  }
 
   filesToOpen = dir(file.path("rds"), pattern = suffix, full.names = TRUE)
 
   pb = tcltk::tkProgressBar("Merging data...", paste("File 0/", length(filesToOpen), sep = ""), 0, length(filesToOpen), 200)
 
-  totalParameters = NULL
   pooledData = list()
   foreach::foreach(a = 1:length(filesToOpen)) %do%
   {
@@ -29,6 +36,27 @@ mergeSamples = function(suffix = NULL)
     currentData@description$GUID = currentSample
 
     pooledData[[currentSample]] = currentData
+
+
+    descriptionsToReplaceID = as.vector(which(is.na(flowCore::parameters(pooledData[[currentSample]])$desc)))
+
+    if(length(descriptionsToReplaceID) > 0)
+    {
+
+      flowCore::parameters(pooledData[[currentSample]])$desc[descriptionsToReplaceID] = as.vector(flowCore::parameters(pooledData[[currentSample]])$name[descriptionsToReplaceID])
+    }
+
+    if(useStructureFromReferenceSample > 0)
+    {
+
+
+      flowCore::exprs(pooledData[[currentSample]]) = flowCore::exprs(pooledData[[currentSample]])[, colnames(flowCore::exprs(pooledData[[useStructureFromReferenceSample]]))]
+
+      flowCore::parameters(pooledData[[currentSample]])$desc = flowCore::parameters(pooledData[[useStructureFromReferenceSample]])$desc
+
+
+
+    }
 
     tcltk::setTkProgressBar(pb, a, label = paste("File ", a, "/", length(filesToOpen), sep = ""))
   }

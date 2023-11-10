@@ -37,6 +37,7 @@ poolData = function(flowSet = NULL, groupVector = NULL, parametersToKeep = NULL,
   w = NULL
   u = NULL
   v = NULL
+  o = NULL
 
   outputMessage = NULL
   samplesToRemoveNames = NULL
@@ -314,7 +315,7 @@ poolData = function(flowSet = NULL, groupVector = NULL, parametersToKeep = NULL,
   totalResultsEditedTotalDataList = list()
   totalResultsDeletedDataNotSampledList = list()
 
-  foreach(o = 1:length(estimateThresholdTable)) %do%
+  foreach::foreach(o = 1:length(estimateThresholdTable)) %do%
     {
       currentResultsList = estimateThresholdTable[[o]]
 

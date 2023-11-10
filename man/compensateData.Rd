@@ -4,10 +4,15 @@
 \alias{compensateData}
 \title{Compensate \code{rds} files}
 \usage{
-compensateData(parametersToCompensate = NULL)
+compensateData(
+  parametersToCompensate = NULL,
+  useCustomCompensationMatrix = FALSE
+)
 }
 \arguments{
 \item{parametersToCompensate}{A vector of all parameters to compensate in each \code{rds} file. Defaults to \code{NULL}.}
+
+\item{useCustomCompensationMatrix}{A boolean defining if untouched embedded (if set to \code{FALSE}) or tuned (if set to \code{TRUE}) compensation matrix should be used for data compensation. Defaults to \code{FALSE}.}
 }
 \value{
 Generated \code{rds} files are saved to \code{rds} directory, overwriting the previous ones.

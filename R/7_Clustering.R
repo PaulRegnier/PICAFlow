@@ -639,7 +639,7 @@ exportClustersStatsAndPlots = function(data = NULL, folder = NULL, parametersToU
 
       currentGroup_data = data[data$group == currentGroup, ]
 
-      uniqueGroupPatientsID = grep(paste("Group-", currentGroup, sep = ""), uniquePatients)
+      uniqueGroupPatientsID = grep(paste("Group-", currentGroup, "_", sep = ""), uniquePatients)
       currentCluster_currentGroup_data_patients = gsub(paste("Group-", currentGroup, "_Sample-", sep = ""), "", uniquePatients[uniqueGroupPatientsID])
 
       currentCluster_data_currentGroup_plot = currentCluster_data_currentGroup
@@ -937,9 +937,12 @@ clustersPhenotypesHeatmap = function(prefix = NULL, thresholds = NULL, metricUse
     middle = mean(totalClustersPhenotypes, na.rm = TRUE)
   }
 
-  colors = c(seq(min, (middle - 1) - 0.01, length = 100), seq(middle - 1, middle + 1, length = 300), seq((middle + 1) + 0.01, max, length = 100))
 
-  customPalette = (grDevices::colorRampPalette(c("lightblue", "blue", "black", "yellow", "orange")))(n = 499)
+	separator = min(abs(min-middle), abs(max-middle))/2
+
+  colors = sort(c(seq(min, (middle - separator) - 0.001, length = 25), seq(middle - separator, middle + separator, length = 50), seq((middle + separator) + 0.001, max, length = 25)))
+
+  customPalette = (grDevices::colorRampPalette(c("lightblue", "blue", "black", "yellow", "orange")))(n = 99)
 
   grDevices::pdf(file = file.path("output", "7_Clustering", datasetFolder, paste("heatmap_clustersPhenotypes_rowScaled.pdf", sep = "")), bg = "transparent", width = 20, height = 10, paper = "a4r")
 
@@ -960,7 +963,7 @@ clustersPhenotypesHeatmap = function(prefix = NULL, thresholds = NULL, metricUse
 
   utils::write.table(totalClustersPhenotypes_exported, file = file.path("output", "7_Clustering", datasetFolder, paste("heatmap_clustersPhenotypes_data.txt", sep = "")), quote = FALSE, col.names = TRUE, sep = "\t", row.names = FALSE)
 
-  if(thresholds != NULL)
+  if(is.null(thresholds) == FALSE)
   {
 
     totalClustersPhenotypes_binary = totalClustersPhenotypes_unscaled
@@ -1007,9 +1010,9 @@ clustersPhenotypesHeatmap = function(prefix = NULL, thresholds = NULL, metricUse
 
 }
 
-#' Export information about clusters abundance
+#' Export information about clusters abundance (group- or sample-wise)
 #'
-#' This function allows to export heatmaps about clusters abundance per group.
+#' This function allows to export heatmaps about clusters abundance per group or per sample.
 #'
 #' @param prefix A string defining the prefix of the clusters abundance file to use. Defaults to `NULL`.
 #'
@@ -1017,23 +1020,62 @@ clustersPhenotypesHeatmap = function(prefix = NULL, thresholds = NULL, metricUse
 #'
 #' @param datasetFolder A string defining in which folder to save the results. It can be either `full` for the full downsampled dataset, `training` for the training downsampled subdataset or `validation` for the validation downsampled subdataset. The value must match the origin of the data used. Defaults to `full`.
 #'
+#' @param mode A string defining the mode to use for heatmap generation. It can be either `group` or `sample`. Defaults to `group`.
+#'
 #' @return Generated PDF files are saved to `output > 7_Clustering > datasetFolder`.
 #'
 #' @export
 
-clustersPercentagesHeatmap = function(prefix = NULL, metricUsed = "median", datasetFolder = "full")
+clustersPercentagesHeatmap = function(prefix = NULL, metricUsed = "median", datasetFolder = "full", mode = "group")
 {
-  totalClustersPercentages = utils::read.csv(file = file.path("output", "7_Clustering", datasetFolder, paste(prefix, "_clustersPercentages_perGroup.txt", sep = "")), sep = "\t")
+  d = NULL
 
-  rownames(totalClustersPercentages) = totalClustersPercentages$Group
-  totalClustersPercentages$Group = NULL
+  if(mode == "group")
+  {
+    totalClustersPercentages = utils::read.csv(file = file.path("output", "7_Clustering", datasetFolder, paste(prefix, "_clustersPercentages_perGroup.txt", sep = "")), sep = "\t")
 
-  clustersNames = colnames(totalClustersPercentages)
-  groupsNames = rownames(totalClustersPercentages)
 
-  totalClustersPercentages = apply(totalClustersPercentages, 2, as.numeric)
-  colnames(totalClustersPercentages) = clustersNames
-  rownames(totalClustersPercentages) = groupsNames
+    rownames(totalClustersPercentages) = totalClustersPercentages$Group
+    totalClustersPercentages$Group = NULL
+
+    clustersNames = colnames(totalClustersPercentages)
+    groupsNames = rownames(totalClustersPercentages)
+
+    totalClustersPercentages = apply(totalClustersPercentages, 2, as.numeric)
+    colnames(totalClustersPercentages) = clustersNames
+    rownames(totalClustersPercentages) = groupsNames
+  } else if(mode == "sample")
+  {
+    totalClustersPercentages = utils::read.csv(file = file.path("output", "7_Clustering", datasetFolder, paste(prefix, "_clustersPercentages.txt", sep = "")), sep = "\t")
+
+    rownames(totalClustersPercentages) = totalClustersPercentages$Sample
+    totalClustersPercentages$Sample = NULL
+    totalClustersPercentages$SampleCorrected = NULL
+
+    clustersNames = colnames(totalClustersPercentages)
+    sampleNames = rownames(totalClustersPercentages)
+
+    totalClustersPercentages = apply(totalClustersPercentages, 2, as.numeric)
+    colnames(totalClustersPercentages) = clustersNames
+    rownames(totalClustersPercentages) = sampleNames
+
+  } else
+  {
+    totalClustersPercentages = utils::read.csv(file = file.path("output", "7_Clustering", datasetFolder, paste(prefix, "_clustersPercentages_perGroup.txt", sep = "")), sep = "\t")
+
+
+    rownames(totalClustersPercentages) = totalClustersPercentages$Group
+    totalClustersPercentages$Group = NULL
+
+    clustersNames = colnames(totalClustersPercentages)
+    groupsNames = rownames(totalClustersPercentages)
+
+    totalClustersPercentages = apply(totalClustersPercentages, 2, as.numeric)
+    colnames(totalClustersPercentages) = clustersNames
+    rownames(totalClustersPercentages) = groupsNames
+  }
+
+
 
   totalClustersPercentages = scale(totalClustersPercentages)
 
@@ -1051,13 +1093,53 @@ clustersPercentagesHeatmap = function(prefix = NULL, metricUsed = "median", data
     middle = mean(totalClustersPercentages, na.rm = TRUE)
   }
 
-  colors = c(seq(min, (middle - 1) - 0.01, length = 100), seq(middle - 1, middle + 1, length = 300), seq((middle + 1) + 0.01, max, length = 100))
+    	separator = min(abs(min-middle), abs(max-middle))/2
 
-  customPalette = (grDevices::colorRampPalette(c("lightblue", "blue", "black", "yellow", "orange")))(n = 499)
 
-  grDevices::pdf(file = file.path("output", "7_Clustering", datasetFolder, paste("heatmap_clustersPercentages_columnScaled.pdf", sep = "")), bg = "transparent", width = 20, height = 10, paper = "a4r")
+  colors = sort(c(seq(min, (middle - separator) - 0.001, length = 25), seq(middle - separator, middle + separator, length = 50), seq((middle + separator) + 0.001, max, length = 25)))
 
-  gplots::heatmap.2(totalClustersPercentages, trace = "none", scale = "none", key = TRUE, keysize = 1, density.info = "none", col = customPalette, breaks = colors, cexRow = 0.8, cexCol = 0.8, margins = c(20, 8), dendrogram = "both")
+
+
+  customPalette = (grDevices::colorRampPalette(c("lightblue", "blue", "black", "yellow", "orange")))(n = 99)
+
+  if(mode == "group")
+  {
+
+    grDevices::pdf(file = file.path("output", "7_Clustering", datasetFolder, paste("heatmap_clustersPercentages_perGroup_columnScaled.pdf", sep = "")), bg = "transparent", width = 20, height = 10, paper = "a4r")
+
+    gplots::heatmap.2(totalClustersPercentages, trace = "none", scale = "none", key = TRUE, keysize = 1, density.info = "none", col = customPalette, breaks = colors, cexRow = 0.8, cexCol = 0.8, margins = c(20, 8), dendrogram = "both")
+
+
+  } else if(mode == "sample")
+  {
+
+    groupsPerSample = gsub("Group-(.+)_Sample-(.+)", "\\1", rownames(totalClustersPercentages))
+
+    uniqueGroups = unique(groupsPerSample)
+
+    groupsPalette = grDevices::rainbow(length(uniqueGroups))
+
+    foreach::foreach(d = 1:length(uniqueGroups)) %do%
+      {
+
+        currentGroup = uniqueGroups[d]
+
+        groupsPerSample[groupsPerSample == currentGroup] = groupsPalette[d]
+      }
+
+    grDevices::pdf(file = file.path("output", "7_Clustering", datasetFolder, paste("heatmap_clustersPercentages_perSample_columnScaled.pdf", sep = "")), bg = "transparent", width = 20, height = 10, paper = "a4r")
+
+    gplots::heatmap.2(totalClustersPercentages, trace = "none", scale = "none", key = TRUE, keysize = 1, density.info = "none", col = customPalette, breaks = colors, cexRow = 0.8, cexCol = 0.8, margins = c(18, 14), dendrogram = "both", RowSideColors = groupsPerSample)
+
+  } else
+  {
+    grDevices::pdf(file = file.path("output", "7_Clustering", datasetFolder, paste("heatmap_clustersPercentages_perGroup_columnScaled.pdf", sep = "")), bg = "transparent", width = 20, height = 10, paper = "a4r")
+
+    gplots::heatmap.2(totalClustersPercentages, trace = "none", scale = "none", key = TRUE, keysize = 1, density.info = "none", col = customPalette, breaks = colors, cexRow = 0.8, cexCol = 0.8, margins = c(20, 8), dendrogram = "both")
+
+  }
+
+
 
   grDevices::dev.off()
 

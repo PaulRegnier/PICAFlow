@@ -4,18 +4,25 @@
 \alias{constructPlots}
 \title{Construct abundance plots for desired features}
 \usage{
-constructPlots(data = NULL, columnsToPlot = NULL, features = NULL)
+constructPlots(
+  data = NULL,
+  columnsToPlot = NULL,
+  features = NULL,
+  plotUMAPOverlays = TRUE
+)
 }
 \arguments{
 \item{data}{A data frame containing the dataset to use. This argument should be the output of the \code{bindData()} function. Defaults to \code{NULL}.}
 
 \item{columnsToPlot}{A character vector defining the columns to be used as plotted elements (typically cell clusters). Defaults to \code{NULL}.}
 
-\item{features}{A character vector defining the columns to be used as features (typically group, cluster or metadata) Defaults to \code{NULL}.}
+\item{features}{A character vector defining the columns to be used as features (typically group, cluster or metadata). Defaults to \code{NULL}.}
+
+\item{plotUMAPOverlays}{A boolean defining if the UMAP overlays should be plotted (\code{TRUE}) or not (\code{FALSE}). This is typically used if the user does not intend to use the metadata addition and analysis, but only wants the boxplots to be produced. Defaults to \code{TRUE}.}
 }
 \value{
 Generated PDF files are saved to \verb{output > 8_Analysis > columnsToPlot} subdirectories.
 }
 \description{
-This function allows to generate and export plots showing the cluster abundance for one or several desired feature(s) of interest. A feature can be for instance a group or a metadata element.
+This function allows to generate and export plots showing the cluster abundance for one or several desired feature(s) of interest, both using boxplots and UMAP overlays. A feature can be for instance a group or a metadata element.
 }

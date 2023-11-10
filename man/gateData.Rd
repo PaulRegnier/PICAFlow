@@ -11,14 +11,16 @@ gateData(
   yParameter = NULL,
   xlim = NULL,
   ylim = NULL,
-  xGateLim = NULL,
-  yGateLim = NULL,
   subset = FALSE,
   gateName = NULL,
   exportAllPlots = FALSE,
   samplesPerPage = 6,
   recursivity = FALSE,
-  inverseGating = FALSE
+  inverseGating = FALSE,
+  specificGatesSampleIDs = NULL,
+  redrawGate = TRUE,
+  gatingset = NULL,
+  generatedGates = NULL
 )
 }
 \arguments{
@@ -34,10 +36,6 @@ gateData(
 
 \item{ylim}{A numeric vector of length 2 defining the minimum and maximum display values for the y axis. Defaults to \code{NULL}.}
 
-\item{xGateLim}{A numeric vector of length 2 defining the minimum and maximum limits for the gate x axis. \code{-Inf} and \code{+Inf} values can be used. Defaults to \code{NULL}.}
-
-\item{yGateLim}{A numeric vector of length 2 defining the minimum and maximum limits for the gate y axis. \code{-Inf} and \code{+Inf} values can be used. Defaults to \code{NULL}.}
-
 \item{subset}{A boolean defining if gated cells should be actually extracted from the \code{flowSet}. Defaults to \code{FALSE}.}
 
 \item{gateName}{A string defining a user-friendly name for the current gate. Defaults to \code{NULL}.}
@@ -49,6 +47,14 @@ gateData(
 \item{recursivity}{A boolean defining if generated plots should be simply printed (if set to \code{FALSE}) or returned by the function (if set to \code{TRUE}). This argument is automatically set to \code{TRUE} when \code{exportAllPlots} is also set to \code{TRUE}. Please note that this argument should not be changed manually. Defaults to \code{FALSE}.}
 
 \item{inverseGating}{A boolean defining if the gate should rather consider cells that are outside the gate (if set to \code{TRUE}). Defaults to \code{FALSE}.}
+
+\item{specificGatesSampleIDs}{A numeric vector defining the sample IDs to use for the generation of sample-wise adapted gates. Defaults to \code{NULL}}
+
+\item{redrawGate}{A boolean defining if the gates should be manualy redrawn or not. Defaults to \code{TRUE}}
+
+\item{gatingset}{A \code{gatingset} object used internally to store data in a compatible way with \code{flowGate} package. This value should not be manually provided apart from what is described in the tutorial. Defaults to \code{NULL}.}
+
+\item{generatedGates}{A named list containing the gates that were generated during the gating process. This value should not be manually provided apart from what is described in the tutorial. Defaults to \code{NULL}.}
 }
 \value{
 If \code{exportAllPlots = TRUE}, the function will output PDF files containing the gating plots for each sample of the dataset. If \code{subset = TRUE}, the function will return a list of 2 elements named \code{flowset} (containing the actual gated \code{flowSet}) and \code{summary} (containing basic statistics about the gating such as the number of cells before gating, the number of cells gated and the proportion of cells gated).

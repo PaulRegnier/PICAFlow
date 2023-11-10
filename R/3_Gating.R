@@ -14,10 +14,6 @@
 #'
 #' @param ylim A numeric vector of length 2 defining the minimum and maximum display values for the y axis. Defaults to `NULL`.
 #'
-#' @param xGateLim A numeric vector of length 2 defining the minimum and maximum limits for the gate x axis. `-Inf` and `+Inf` values can be used. Defaults to `NULL`.
-#'
-#' @param yGateLim A numeric vector of length 2 defining the minimum and maximum limits for the gate y axis. `-Inf` and `+Inf` values can be used. Defaults to `NULL`.
-#'
 #' @param subset A boolean defining if gated cells should be actually extracted from the `flowSet`. Defaults to `FALSE`.
 #'
 #' @param gateName A string defining a user-friendly name for the current gate. Defaults to `NULL`.
@@ -30,16 +26,27 @@
 #'
 #' @param inverseGating A boolean defining if the gate should rather consider cells that are outside the gate (if set to `TRUE`). Defaults to `FALSE`.
 #'
+#' @param specificGatesSampleIDs A numeric vector defining the sample IDs to use for the generation of sample-wise adapted gates. Defaults to `NULL`
+#'
+#' @param redrawGate A boolean defining if the gates should be manualy redrawn or not. Defaults to `TRUE`
+#'
+#' @param gatingset A `gatingset` object used internally to store data in a compatible way with `flowGate` package. This value should not be manually provided apart from what is described in the tutorial. Defaults to `NULL`.
+#'
+#' @param generatedGates A named list containing the gates that were generated during the gating process. This value should not be manually provided apart from what is described in the tutorial. Defaults to `NULL`.
+#'
 #' @return If `exportAllPlots = TRUE`, the function will output PDF files containing the gating plots for each sample of the dataset. If `subset = TRUE`, the function will return a list of 2 elements named `flowset` (containing the actual gated `flowSet`) and `summary` (containing basic statistics about the gating such as the number of cells before gating, the number of cells gated and the proportion of cells gated).
 #'
 #' @importFrom foreach %do%
 #'
 #' @export
 
-gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yParameter = NULL, xlim = NULL, ylim = NULL, xGateLim = NULL, yGateLim = NULL, subset = FALSE, gateName = NULL, exportAllPlots = FALSE, samplesPerPage = 6, recursivity = FALSE, inverseGating = FALSE)
+gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yParameter = NULL, xlim = NULL, ylim = NULL, subset = FALSE, gateName = NULL, exportAllPlots = FALSE, samplesPerPage = 6, recursivity = FALSE, inverseGating = FALSE, specificGatesSampleIDs = NULL, redrawGate = TRUE, gatingset = NULL, generatedGates = NULL)
 {
   a = NULL
   p = NULL
+  g = NULL
+  h = NULL
+  i = NULL
 
   xParameterOriginal = xParameter
   yParameterOriginal = yParameter
@@ -55,7 +62,20 @@ gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yPar
   }
 
   plot = ggcyto::ggcyto(flowset[sampleToPlot], ggplot2::aes(x = !!rlang::sym(xParameter), y = !!rlang::sym(yParameter)))
+
   plot = plot + ggplot2::geom_bin_2d(bins = 256)  # geom_hex() is bugging right now (28/11/2022)
+
+  if (length(sampleToPlot) > 1)
+  {
+    plot = plot + ggplot2::ggtitle(paste("Displaying samples number: ", paste(sampleToPlot, collapse = ", "), sep = ""))
+
+  } else
+  {
+
+    plot = plot + ggplot2::ggtitle(paste("Displaying sample number: ", paste(sampleToPlot, collapse = ", "), sep = ""))
+
+  }
+
 
   if (is.null(xlim) == FALSE & is.null(ylim) == FALSE)
   {
@@ -75,24 +95,129 @@ gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yPar
     yParameter = names(flowCore::markernames(flowset))[matchingID]
   }
 
-  if (is.null(xGateLim) == FALSE & is.null(yGateLim) == FALSE)
-  {
-    namedParametersList = list(xParameter = xGateLim, yParameter = yGateLim)
-    names(namedParametersList) = c(xParameter, yParameter)
 
-    rect.g = flowCore::rectangleGate(namedParametersList, filterId = "Gate")
+if(is.null(gatingset) == TRUE)
+{
+
+  gatingset = flowWorkspace::GatingSet(flowset)
+
+  globalGate = flowGate::gs_gate_interactive(gatingset, filterId = "globalGate", dims = list(xParameter, yParameter))
+
+
+
+  globalGate = globalGate$Gate
+
+
+
+  generatedGates = vector(mode = "list", length = length(flowset))
+
+  foreach::foreach(g = 1:length(flowset)) %do%
+    {
+      generatedGates[[g]] = globalGate
+    }
+
+  names(generatedGates) = Biobase::phenoData(flowset)$name
+
+
+
+
+
+
+
+
+} else
+{
+
+  if(is.null(generatedGates) == TRUE)
+  {
+
+    nodes = flowWorkspace::gs_get_pop_paths(gatingset, path = "auto")
+
+
+    generatedGates = flowWorkspace::gs_pop_get_gate(gatingset, nodes[2])
+  }
+
+
+  if(redrawGate == TRUE & is.null(specificGatesSampleIDs) == FALSE)
+  {
+
+
+
+
+    foreach::foreach(h = 1:length(specificGatesSampleIDs)) %do%
+        {
+          currentSampleSpecificGate = specificGatesSampleIDs[h]
+
+          currentSampleName = rownames(Biobase::phenoData(flowset))[currentSampleSpecificGate]
+
+nodes_temp = flowWorkspace::gs_get_pop_paths(gatingset, path = "auto")
+
+print(paste("Opening sample ", h, "/", length(specificGatesSampleIDs), " for special gating: ", "ID #", currentSampleSpecificGate, " (", currentSampleName, ")", sep = ""))
+
+if(length(grep("specialGate", nodes_temp)) == 0)
+{
+
+  currentSpecificGate = flowGate::gs_gate_interactive(gatingset, sample = currentSampleSpecificGate, filterId = "specialGate", dims = list(xParameter, yParameter), overlayGates = "globalGate")
+} else
+{
+
+  currentSpecificGate = flowGate::gs_gate_interactive(gatingset, sample = currentSampleSpecificGate, filterId = "specialGate", dims = list(xParameter, yParameter), overlayGates = "globalGate", regate = TRUE)
+
+}
+
+
+
+
+
+
+
+          # currentSpecificGate = gs_gate_interactive(gatingset[[currentSampleSpecificGate]], filterId = rownames(phenoData(flowset))[currentSampleSpecificGate], dims = list(xParameter, yParameter), overlayGates = rownames(phenoData(flowset))[currentSampleSpecificGate], regate = TRUE)
+
+
+          generatedGates[[currentSampleName]] = currentSpecificGate$Gate
+
+        }
+
+
+
+
+  }
+
+
+
+
+
+#
+# nodes = gs_get_pop_paths(gatingset, path = "auto")
+#
+#
+# generatedGates = gs_pop_get_gate(gatingset, nodes[2])
+
+
+}
+
+
+
+
 
     if (inverseGating == TRUE)
     {
-      plot = plot + ggcyto::geom_gate(rect.g) + ggcyto::geom_stats(size = 3, color = "red")
+      plot = plot + ggcyto::geom_gate(generatedGates) + ggcyto::geom_stats(size = 3, color = "red")
 
-      rect.g = !rect.g
+
 
       plot = plot + ggplot2::annotate("text", x = xlim[1], y = ylim[1], hjust = 0, vjust = "bottom", label = "Complementary gate!", color = "red", size = 3)
 
+foreach::foreach(i = 1:length(generatedGates)) %do%
+  {
+  generatedGates[[i]] = !generatedGates[[i]]
+
+}
+
+
     } else
     {
-      plot = plot + ggcyto::geom_gate(rect.g) + ggcyto::geom_stats(size = 3)
+      plot = plot + ggcyto::geom_gate(generatedGates) + ggcyto::geom_stats(size = 3)
     }
 
     if (subset == TRUE)
@@ -101,7 +226,7 @@ gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yPar
 
 	    flowset = methods::as(flowset, "flowSet")
 
-      resultFilter = flowCore::filter(flowset, rect.g)
+      resultFilter = flowCore::filter(flowset, generatedGates)
 
 	    resultFilter = as.list(resultFilter)
 
@@ -118,9 +243,9 @@ gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yPar
 
       result = flowCore::Subset(flowset, resultFilter)
 
-      return(list(flowset = result, summary = resultFilterStats))
+      return(list(flowset = result, summary = resultFilterStats, generatedGates = generatedGates))
     }
-  }
+
 
   plot = plot + ggplot2::theme(strip.text.x = ggplot2::element_text(size = 6, color = "black"), strip.text.y = ggplot2::element_text(size = 6, color = "black"), axis.text.x = ggplot2::element_text(size = 6), axis.text.y = ggplot2::element_text(size = 6))
 
@@ -150,7 +275,7 @@ gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yPar
 
     foreach::foreach(q = 1:length(pagesSamplesList)) %do%
     {
-      gateData(flowset = flowset, sampleToPlot = seq(pagesSamplesList[[q]][1], pagesSamplesList[[q]][2]), xParameter = xParameterOriginal, yParameter = yParameterOriginal, xlim = xlim, ylim = ylim, xGateLim = xGateLim, yGateLim = yGateLim, exportAllPlots = FALSE, recursivity = TRUE, inverseGating = inverseGating)
+      gateData(flowset = flowset, sampleToPlot = seq(pagesSamplesList[[q]][1], pagesSamplesList[[q]][2]), xParameter = xParameterOriginal, yParameter = yParameterOriginal, xlim = xlim, ylim = ylim, exportAllPlots = FALSE, recursivity = TRUE, inverseGating = inverseGating, specificGatesSampleIDs = specificGatesSampleIDs, redrawGate = FALSE, gatingset = gatingset, generatedGates = generatedGates)
 
       if (dir.exists(file.path("output", "3_Gating", paste("x=", xParameterOriginal, "_y=", yParameterOriginal, sep = ""))))
       {
@@ -163,35 +288,13 @@ gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yPar
       ggplot2::ggsave(filename = paste("x=", xParameterOriginal, "_y=", yParameterOriginal, "_samples-", pagesSamplesList[[q]][1], "-to-", pagesSamplesList[[q]][2], ".pdf", sep = ""), device = "pdf", path = file.path("output", "3_Gating", paste("x=", xParameterOriginal, "_y=", yParameterOriginal, sep = "")))
     }
   }
-}
 
-#' Export gating parameters
-#'
-#' This function allows to export a text file summarizing all the parameters used for the gating process.
-#'
-#' @param gatingParameters A list defining the parameters to export. It should be a list generated using `gateData()` function. Defaults to `NULL`.
-#'
-#' @return Generated text file is saved to `output > 3_Gating` directory.
-#'
-#' @importFrom foreach %do%
-#'
-#' @export
 
-exportGatingParameters = function(gatingParameters = NULL)
-{
-  a = NULL
+    return(list(gatingset = gatingset, generatedGates = generatedGates))
 
-  finalGatingParameters = data.frame(matrix("", nrow = length(gatingParameters), ncol = 11))
-  colnames(finalGatingParameters) = c("GateNumber", "GateName", "xParameter", "yParameter", "xlim", "ylim", "xGateLim", "yGateLim", "samplesToUse", "samplesPerPage", "inverseGating")
 
-  foreach::foreach(a = 1:length(gatingParameters)) %do%
-  {
-    currentListElement = gatingParameters[[a]]
 
-    finalGatingParameters[a, ] = c(as.character(a), names(gatingParameters)[a], currentListElement$xParameter_value, currentListElement$yParameter_value, paste(currentListElement$xlim_value, collapse = ", "), paste(currentListElement$ylim_value, collapse = ", "), paste(currentListElement$xGateLim_value, collapse = ", "), paste(currentListElement$yGateLim_value, collapse = ", "), paste(currentListElement$samplesToUse_value, collapse = ", "), as.character(currentListElement$samplesPerPage_value), as.character(currentListElement$inverseGating_value))
-  }
 
-  utils::write.table(finalGatingParameters, file.path("output", "3_Gating", "gatingParameters.txt"), quote = FALSE, col.names = TRUE, row.names = FALSE, sep = "\t")
 }
 
 #' Export gating statistics
@@ -200,14 +303,16 @@ exportGatingParameters = function(gatingParameters = NULL)
 #'
 #' @param totalStats A list of gating statistics generated with the `gateData()` method. Defaults to `NULL`.
 #'
+#' @param filename A character vector defining the custom file name to use for the gating statistics to export. Defaults to `gatingStatistics`.
+#'
 #' @return Generated text file is saved to `output > 3_Gating` directory.
 #'
 #' @export
 
-exportGatingStatistics = function(totalStats = NULL)
+exportGatingStatistics = function(totalStats = NULL, filename = "gatingStatistics")
 {
   totalStats = as.data.frame(totalStats)
   totalStats = rbind(colnames(totalStats), totalStats)
   rownames(totalStats)[1] = "Samples"
-  utils::write.table(totalStats, file.path("output", "3_Gating", "gatingStatistics.txt"), quote = FALSE, col.names = FALSE, row.names = TRUE, sep = "\t")
+  utils::write.table(totalStats, file.path("output", "3_Gating", paste(filename, ".txt", sep = "")), quote = FALSE, col.names = FALSE, row.names = TRUE, sep = "\t")
 }

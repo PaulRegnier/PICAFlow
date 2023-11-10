@@ -4,10 +4,12 @@
 \alias{mergeSamples}
 \title{Merge \code{rds} files into a single \code{rds} file}
 \usage{
-mergeSamples(suffix = NULL)
+mergeSamples(suffix = NULL, useStructureFromReferenceSample = 0)
 }
 \arguments{
 \item{suffix}{A character string eventually used to select some \code{rds} files to merge. Defaults to \code{NULL}.}
+
+\item{useStructureFromReferenceSample}{A numeric specifying the sample number to use as reference for channel order and description. Setting this to a value > 0 will reorder each channel and overwrite the descriptions for each flowFrame according to the reference sample. Defaults to \code{0}, which prevents any reordering and overwriting.}
 }
 \value{
 Generated \code{rds} file is saved to \code{rds} directory.

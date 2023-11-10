@@ -150,6 +150,56 @@ convertToRDS = function(conversionTable = NULL)
   return(totalParametersData)
 }
 
+
+#' Export new `rds` files from a previously generated pooled version
+#'
+#' This function exports new `rds` files (one per sample) from a previously generated pooled version
+#'
+#' @param RDSFileToUse A vector of all parameters to plot. Defaults to `NULL`.
+#'
+#' @param coresNumber An integer defining the number of cores to use to export the files. It corresponds to the number of samples to be treated concomitantly. Defaults to `2`.
+#'
+#' @return Generated `rds` files are saved to `rds` directory. Please note that they will overwrite any preexisting `rds` file with the same name.
+#'
+#' @importFrom foreach %dopar%
+#'
+#' @export
+
+exportRDSFilesFromPool = function(RDSFileToUse = NULL, coresNumber = 2)
+{
+  a = NULL
+
+  flowSetToSplit = readRDS(file.path("rds", paste(RDSFileToUse, ".rds", sep = "")))
+
+  samplesToExport = flowCore::sampleNames(flowSetToSplit)
+
+
+  cl = parallel::makeCluster(coresNumber, type = "PSOCK")
+  doSNOW::registerDoSNOW(cl)
+
+  pb = utils::txtProgressBar(min = 0, max = length(samplesToExport), style = 3)
+  progress = function(n) utils::setTxtProgressBar(pb, n)
+  opts = list(progress = progress)
+
+
+  foreach::foreach(a = samplesToExport, .packages = c("foreach", "flowCore", "tcltk"), .options.snow = opts) %dopar%
+    {
+
+      flowSetToSplit = readRDS(file.path("rds", paste(RDSFileToUse, ".rds", sep = "")))
+      currentFlowFrame = flowSetToSplit[[a]]
+      currentFlowFrameName = a
+
+      saveRDS(currentFlowFrame, file.path("rds", paste(currentFlowFrameName, ".rds", sep = "")))
+
+      gc()
+
+    }
+
+  parallel::stopCluster(cl)
+
+}
+
+
 #' Subset `rds` files
 #'
 #' This function subsets every `rds` file with the specified parameters of interest. It can also rename each parameter in a more user-friendly way.
@@ -198,11 +248,247 @@ subsetData = function(parametersToKeep = NULL, customNames = NULL)
   parallel::stopCluster(cl)
 }
 
+
+#' Launch the R Shiny interactive application for edition of data compensations
+#'
+#' This function launches a R Shiny interactive application which helps to visually adjust data compensations.
+#'
+#' @param fs_shiny A flowSet generated using `mergeData()` function. Defaults to `NULL`.
+#'
+#' @param maxEventsNumber The maximum number of events to use for data displaying. Defaults to `10000`.
+#'
+#' @importFrom foreach %do%
+#'
+#' @export
+
+launchCompensationTuningShinyApp = function(fs_shiny = NULL, maxEventsNumber = 10000)
+{
+  o = NULL
+  a = NULL
+  b = NULL
+
+  samplesValuesList = as.list(seq(1, length(fs_shiny), 1))
+  names(samplesValuesList) = rownames(Biobase::phenoData(fs_shiny))
+
+  totalSampleLengths = NULL
+  foreach::foreach(o = 1:length(samplesValuesList)) %do%
+    {
+      totalSampleLengths = c(totalSampleLengths, nrow(fs_shiny[[o]]@exprs))
+    }
+
+  pooledValuesShiny = list()
+
+  foreach::foreach(o = 1:length(samplesValuesList)) %do%
+    {
+      names(samplesValuesList)[o] = paste(names(samplesValuesList)[o], " (#", nrow(fs_shiny[[o]]@exprs), ")", sep = "")
+
+      pooledValuesShiny[[o]] = flowCore::exprs(fs_shiny[[o]])[sample(nrow(fs_shiny[[o]]), round(mean(totalSampleLengths)/length(totalSampleLengths))), ]
+    }
+
+  pooledValuesShiny = do.call(rbind.data.frame, pooledValuesShiny)
+  pooledValuesShiny = as.matrix(pooledValuesShiny)
+
+  fs_shiny = methods::rbind2(fs_shiny, fs_shiny[[1]])
+
+  flowCore::exprs(fs_shiny[[(length(samplesValuesList) + 1)]]) = pooledValuesShiny
+
+  flowWorkspace::sampleNames(fs_shiny)[(length(samplesValuesList) + 1)] = "All_Samples"
+
+  samplesValuesList[paste("All_Samples (#", nrow(fs_shiny[[(length(samplesValuesList) + 1)]]@exprs), ")", sep = "")] = length(samplesValuesList) + 1
+
+  parametersNamesList = as.list(seq(1, length(as.vector(colnames(fs_shiny[[1]]@exprs))), 1))
+  names(parametersNamesList) = as.vector(colnames(fs_shiny[[1]]@exprs))
+
+  foreach::foreach(o = 1:length(parametersNamesList)) %do%
+    {
+      parameterName = names(parametersNamesList)[o]
+
+      if (parameterName %in% names(flowCore::markernames(fs_shiny)) == FALSE)
+      {
+        names(parametersNamesList)[o] = paste(parameterName, sep = "")
+        parametersNamesList[o] = parameterName
+      } else
+      {
+        associatedParameterNameId = which(names(flowCore::markernames(fs_shiny)) %in% parameterName)
+        associatedParameterName = as.character(flowCore::markernames(fs_shiny)[associatedParameterNameId])
+        names(parametersNamesList)[o] = paste(parameterName, " (", associatedParameterName, ")", sep = "")
+        parametersNamesList[o] = parameterName
+      }
+    }
+
+
+
+
+
+  # Define UI
+  ui = shiny::pageWithSidebar(
+
+    shiny::titlePanel(shiny::h1(shiny::strong("Tuning of compensation"), align = "center")),
+
+    shiny::sidebarPanel(
+
+      shiny::selectInput("sample", "Sample", samplesValuesList),
+      shiny::selectInput("parameterX", "Parameter x", parametersNamesList),
+      shiny::selectInput("parameterY", "Parameter y", parametersNamesList),
+      shiny::sliderInput("parameterX_compensation", shiny::strong("Parameter x compensation"), min = -2, max = 2, value = 0, step = 0.01),
+      shiny::sliderInput("parameterY_compensation", shiny::strong("Parameter y compensation"), min = -2, max = 2, value = 0, step = 0.01),
+
+
+      shiny::actionButton('export_rds', 'Export rds'),
+      shiny::actionButton('clear_all', 'Clear exports'),
+      width = 4),
+
+    shiny::mainPanel(
+      shiny::plotOutput(outputId = "scatterPlot", height = "900px")
+    )
+  )
+
+  # Define server logic
+  server = function(input, output, session)
+  {
+
+
+    shiny::observe({
+
+      if(file.exists(file.path("rds", "compensationMatrix.rds")) == TRUE)
+      {
+
+        compensationMatrix = readRDS(file.path("rds", "compensationMatrix.rds"))
+      } else
+      {
+
+        compensationMatricesSlot = as.numeric(which(lengths(flowStats::spillover(fs_shiny[[1]])) > 0))
+        compensationMatrix = flowStats::spillover(fs_shiny[[1]])[[compensationMatricesSlot]]
+        rownames(compensationMatrix) = colnames(compensationMatrix)
+      }
+
+
+      currentPairCompensations_1 = compensationMatrix[input$parameterX, input$parameterY]
+      currentPairCompensations_2 = compensationMatrix[input$parameterY, input$parameterX]
+
+
+
+      shiny::updateSliderInput(session, "parameterX_compensation", value = currentPairCompensations_1)
+
+      shiny::updateSliderInput(session, "parameterY_compensation", value = currentPairCompensations_2)
+
+
+
+
+
+    })
+
+    output$scatterPlot = shiny::renderPlot({
+
+      if(file.exists(file.path("rds", "compensationMatrix.rds")) == TRUE)
+      {
+
+        compensationMatrix = readRDS(file.path("rds", "compensationMatrix.rds"))
+      } else
+      {
+
+        compensationMatricesSlot = as.numeric(which(lengths(flowStats::spillover(fs_shiny[[1]])) > 0))
+        compensationMatrix = flowStats::spillover(fs_shiny[[1]])[[compensationMatricesSlot]]
+        rownames(compensationMatrix) = colnames(compensationMatrix)
+      }
+
+      compensationMatrix[input$parameterX, input$parameterY] = input$parameterX_compensation
+      compensationMatrix[input$parameterY, input$parameterX] = input$parameterY_compensation
+
+
+      data = fs_shiny[[as.numeric(input$sample)]]
+
+      parametersListName = flowCore::markernames(fs_shiny)
+
+      parameterXNameId = which(input$parameterX == names(flowCore::markernames(fs_shiny)))
+      parameterYNameId = which(input$parameterY == names(flowCore::markernames(fs_shiny)))
+
+      parameterXName = as.character(flowCore::markernames(fs_shiny)[parameterXNameId])
+      parameterYName = as.character(flowCore::markernames(fs_shiny)[parameterYNameId])
+
+      data = flowCore::compensate(data, compensationMatrix)
+
+      saveRDS(compensationMatrix, file.path("rds", "compensationMatrix.rds"))
+
+
+      resPlot = as.data.frame(data@exprs, stringsAsFactors = FALSE)[1:maxEventsNumber,]
+
+
+      plotMainTitle = paste("Dot plot for parameter x = ", input$parameterX, " and parameter y = ", input$parameterY, sep = "")
+
+
+      plot = ggplot2::ggplot(resPlot, ggplot2::aes(x = resPlot[, input$parameterX], y = resPlot[, input$parameterY])) +
+
+        ggplot2::geom_bin_2d(bins = 256) +
+        ggplot2::scale_fill_continuous(type = "viridis") +
+
+        ggplot2::xlim(floor(min(resPlot[, input$parameterX])) , ceiling(max(resPlot[, input$parameterX]))) +
+        ggplot2::ylim(floor(min(resPlot[, input$parameterY])) , ceiling(max(resPlot[, input$parameterY]))) +
+
+        ggplot2::labs(title = plotMainTitle, x = paste("Intensity of fluorescence (", parameterXName, ")", sep = ""), y = paste("Intensity of fluorescence (", parameterYName, ")", sep = "")) +
+        ggplot2::theme(axis.text = ggplot2::element_text(size = 14), axis.title = ggplot2::element_text(size = 16, face = "bold"), plot.title = ggplot2::element_text(size = 20, face = "bold", hjust = 0.5))
+      plot
+    })
+
+
+
+
+    shiny::observeEvent(input$export_rds, {
+      exportedValues = shiny::reactiveValuesToList(input)
+
+
+
+
+      if(file.exists(file.path("rds", "compensationMatrix.rds")) == TRUE)
+      {
+
+        compensationMatrix = readRDS(file.path("rds", "compensationMatrix.rds"))
+      } else
+      {
+
+        compensationMatricesSlot = as.numeric(which(lengths(flowStats::spillover(fs_shiny[[1]])) > 0))
+        compensationMatrix = flowStats::spillover(fs_shiny[[1]])[[compensationMatricesSlot]]
+        rownames(compensationMatrix) = colnames(compensationMatrix)
+      }
+
+
+
+      saveRDS(compensationMatrix, file.path("output", "1_Transformation", "compensationMatrix.rds"))
+
+
+
+    })
+
+    shiny::observeEvent(input$clear_all, {
+      exportedValues = shiny::reactiveValuesToList(input)
+
+
+      if (file.exists(file.path("output", "1_Transformation", "compensationMatrix.rds")))
+      {
+        unlink(file.path("output", "1_Transformation", "compensationMatrix.rds"))
+      }
+
+      if (file.exists(file.path("rds", "compensationMatrix.rds")))
+      {
+        unlink(file.path("rds", "compensationMatrix.rds"))
+      }
+
+
+    })
+  }
+
+  shiny::shinyApp(ui = ui, server = server)
+}
+
+
+
 #' Compensate `rds` files
 #'
 #' This function applies the self-contained compensation matrix of each `rds` file to every desired parameter.
 #'
 #' @param parametersToCompensate A vector of all parameters to compensate in each `rds` file. Defaults to `NULL`.
+#'
+#' @param useCustomCompensationMatrix A boolean defining if untouched embedded (if set to `FALSE`) or tuned (if set to `TRUE`) compensation matrix should be used for data compensation. Defaults to `FALSE`.
 #'
 #' @return Generated `rds` files are saved to `rds` directory, overwriting the previous ones.
 #'
@@ -210,7 +496,7 @@ subsetData = function(parametersToKeep = NULL, customNames = NULL)
 #'
 #' @export
 
-compensateData = function(parametersToCompensate = NULL)
+compensateData = function(parametersToCompensate = NULL, useCustomCompensationMatrix = FALSE)
 {
   a = NULL
 
@@ -232,10 +518,20 @@ compensateData = function(parametersToCompensate = NULL)
     currentData = readRDS(a)
     currentFilename = gsub("(.+)/(.+)\\.rds", "\\2", a)
 
-    compensationMatricesSlot = as.numeric(which(lengths(flowStats::spillover(currentData)) > 0))
-    compensationMatrix = flowStats::spillover(currentData)[[compensationMatricesSlot]]
-    parametersToKeepID = which(colnames(compensationMatrix) %in% parametersToCompensate)
-    currentSampleComp = compensationMatrix[parametersToKeepID, parametersToKeepID]
+    if(useCustomCompensationMatrix == TRUE)
+    {
+    currentSampleComp = readRDS(file.path("output", "1_Transformation", "compensationMatrix.rds"))
+
+    } else
+    {
+      compensationMatricesSlot = as.numeric(which(lengths(flowStats::spillover(currentData)) > 0))
+      compensationMatrix = flowStats::spillover(currentData)[[compensationMatricesSlot]]
+      parametersToKeepID = which(colnames(compensationMatrix) %in% parametersToCompensate)
+      currentSampleComp = compensationMatrix[parametersToKeepID, parametersToKeepID]
+
+
+    }
+
 
     currentData = flowCore::compensate(currentData, currentSampleComp)
 
@@ -251,3 +547,38 @@ compensateData = function(parametersToCompensate = NULL)
 
   parallel::stopCluster(cl)
 }
+
+#' Get all channels information
+#'
+#' This function gets the names and descriptions of all the parameters contained in the first available `rds` file in the `rds` directory.
+#'
+#' @return A dataframe containing the ID, name and description of all the found parameters.
+#'
+#' @export
+
+getAllChannelsInformation = function()
+{
+  listRDSfiles = list.files(file.path("rds"), pattern = ".rds")
+  fileToOpen = listRDSfiles[1]
+
+  fileContent = readRDS(file.path("rds", fileToOpen))
+
+  if(length(fileContent) > 1)
+  {
+    fileContent = fileContent[[1]]
+
+  }
+
+  allParametersDescriptions = as.vector(flowCore::parameters(fileContent)$desc)
+  allParametersNames = as.vector(flowCore::parameters(fileContent)$name)
+
+  allParametersInformation = data.frame(matrix(0, nrow = length(allParametersDescriptions), ncol = 3))
+  colnames(allParametersInformation) = c("Parameter_ID", "Parameter_Name", "Parameter_Description")
+
+  allParametersInformation$Parameter_ID = 1:length(allParametersDescriptions)
+  allParametersInformation$Parameter_Name = allParametersNames
+  allParametersInformation$Parameter_Description = allParametersDescriptions
+
+  return(allParametersInformation)
+}
+

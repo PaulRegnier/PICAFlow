@@ -278,11 +278,13 @@ subsetDataUMAP = function(data = NULL, columnsToKeepData = NULL, columnsToKeepMe
 #'
 #' @param plotHighlightedFeatureItems A boolean defining if UMAP plots displaying highlighted items of the selected `feature` should also be generated or not. Defaults to `TRUE`.
 #'
+#' @param drawEllipses A boolean defining if ellipses on UMAP plots should be drawn or not. Defaults to `TRUE`.
+#'
 #' @return A list of length 2: the `dataSubset` element containing a data frame of the desired columns of interest and the `dataRemoved` element containing the remaining columns of the dataset. Generated PDF files are saved to `output > 8_Analysis` directory.
 #'
 #' @export
 
-UMAP_clusters = function(data = NULL, n_neighbors_UMAP = NULL, min_dist_UMAP = NULL, feature = NULL, suffix = NULL, returnUMAPData = FALSE, computeUMAP = TRUE, seedValue = 42, plotHighlightedFeatureItems = TRUE)
+UMAP_clusters = function(data = NULL, n_neighbors_UMAP = NULL, min_dist_UMAP = NULL, feature = NULL, suffix = NULL, returnUMAPData = FALSE, computeUMAP = TRUE, seedValue = 42, plotHighlightedFeatureItems = TRUE, drawEllipses = TRUE)
 {
   set.seed(seedValue)
 
@@ -308,10 +310,21 @@ UMAP_clusters = function(data = NULL, n_neighbors_UMAP = NULL, min_dist_UMAP = N
 
   dataUMAP[, feature] = data$dataRemoved[, feature]
 
-  ggplot2::ggplot(dataUMAP, ggplot2::aes(x = UMAP_1, y = UMAP_2, linewidth = 8, color = get(feature))) +
+
+	if(drawEllipses == TRUE)
+	{
+
+	ggplot2::ggplot(dataUMAP, ggplot2::aes(x = UMAP_1, y = UMAP_2, linewidth = 8, color = get(feature))) +
     ggplot2::geom_point() +
     ggplot2::geom_text(ggplot2::aes(label = sample), hjust = -0.4, vjust = 0.4, size = 2.5, color = "black") +
     ggplot2::stat_ellipse(ggplot2::aes(x = UMAP_1, y = UMAP_2, color = get(feature)), type = "norm", level = 0.5, linewidth = 1.5)
+
+	} else
+	{
+	ggplot2::ggplot(dataUMAP, ggplot2::aes(x = UMAP_1, y = UMAP_2, linewidth = 8, color = get(feature))) +
+    ggplot2::geom_point() +
+    ggplot2::geom_text(ggplot2::aes(label = sample), hjust = -0.4, vjust = 0.4, size = 2.5, color = "black")
+	}
 
   currentPlotName = paste("UMAP_Overlay-", feature, suffix, ".pdf", sep = "")
   totalPlotFileName = file.path("output", "8_Analysis", currentPlotName)
@@ -328,10 +341,21 @@ UMAP_clusters = function(data = NULL, n_neighbors_UMAP = NULL, min_dist_UMAP = N
 
   		dataUMAP_temp[dataUMAP_temp[, feature] != currentFeatureItem, feature] = "Other"
 
-  		ggplot2::ggplot(dataUMAP_temp, ggplot2::aes(x = UMAP_1, y = UMAP_2, linewidth = 8, color = get(feature))) +
+
+if(drawEllipses == TRUE)
+	{
+	ggplot2::ggplot(dataUMAP_temp, ggplot2::aes(x = UMAP_1, y = UMAP_2, linewidth = 8, color = get(feature))) +
   		ggplot2::geom_point() +
   		ggplot2::geom_text(ggplot2::aes(label = sample), hjust = -0.4, vjust = 0.4, size = 2.5, color = "black") +
   	  ggplot2::stat_ellipse(ggplot2::aes(x = UMAP_1, y = UMAP_2, color = get(feature)), type = "norm", level = 0.5, linewidth = 1.5)
+
+
+	} else
+	{
+	ggplot2::ggplot(dataUMAP_temp, ggplot2::aes(x = UMAP_1, y = UMAP_2, linewidth = 8, color = get(feature))) +
+  		ggplot2::geom_point() +
+  		ggplot2::geom_text(ggplot2::aes(label = sample), hjust = -0.4, vjust = 0.4, size = 2.5, color = "black")
+	}
 
   	  currentPlotName_outlined = paste("UMAP_Overlay-", feature, suffix, "_", currentFeatureItem, "_highlighted.pdf", sep = "")
   	  totalPlotFileName_outlined = file.path("output", "8_Analysis", currentPlotName_outlined)
@@ -424,13 +448,15 @@ bindData = function(data = NULL)
 
 #' Construct abundance plots for desired features
 #'
-#' This function allows to generate and export plots showing the cluster abundance for one or several desired feature(s) of interest. A feature can be for instance a group or a metadata element.
+#' This function allows to generate and export plots showing the cluster abundance for one or several desired feature(s) of interest, both using boxplots and UMAP overlays. A feature can be for instance a group or a metadata element.
 #'
 #' @param data A data frame containing the dataset to use. This argument should be the output of the `bindData()` function. Defaults to `NULL`.
 #'
 #' @param columnsToPlot A character vector defining the columns to be used as plotted elements (typically cell clusters). Defaults to `NULL`.
 #'
-#' @param features A character vector defining the columns to be used as features (typically group, cluster or metadata) Defaults to `NULL`.
+#' @param features A character vector defining the columns to be used as features (typically group, cluster or metadata). Defaults to `NULL`.
+#'
+#' @param plotUMAPOverlays A boolean defining if the UMAP overlays should be plotted (`TRUE`) or not (`FALSE`). This is typically used if the user does not intend to use the metadata addition and analysis, but only wants the boxplots to be produced. Defaults to `TRUE`.
 #'
 #' @return Generated PDF files are saved to `output > 8_Analysis > columnsToPlot` subdirectories.
 #'
@@ -438,7 +464,7 @@ bindData = function(data = NULL)
 #'
 #' @export
 
-constructPlots = function(data = NULL, columnsToPlot = NULL, features = NULL)
+constructPlots = function(data = NULL, columnsToPlot = NULL, features = NULL, plotUMAPOverlays = TRUE)
 {
   UMAP_1 = NULL
   UMAP_2 = NULL
@@ -451,13 +477,19 @@ constructPlots = function(data = NULL, columnsToPlot = NULL, features = NULL)
 
     dir.create(file.path("output", "8_Analysis", currentColumn))
 
-    currentMidpointValue = (min(data[, currentColumn]) + max(data[, currentColumn]))/2
-    ggplot2::ggplot(data, ggplot2::aes(x = UMAP_1, y = UMAP_2, size = 8, color = get(currentColumn))) +
-      ggplot2::scale_colour_gradient2(low = "blue", high = "red", mid = "yellow", midpoint = currentMidpointValue) +
-      ggplot2::geom_point()
+    if(plotUMAPOverlays == TRUE)
+    {
+      currentMidpointValue = (min(data[, currentColumn]) + max(data[, currentColumn]))/2
+      ggplot2::ggplot(data, ggplot2::aes(x = UMAP_1, y = UMAP_2, size = 8, color = get(currentColumn))) +
+        ggplot2::scale_colour_gradient2(low = "blue", high = "red", mid = "yellow", midpoint = currentMidpointValue) +
+        ggplot2::geom_point()
 
-    currentFileName_plot1 = file.path("output", "8_Analysis", currentColumn, paste("UMAP_Overlay-", currentColumn, ".pdf", sep = ""))
-    ggplot2::ggsave(currentFileName_plot1, width = 10, height = 10)
+      currentFileName_plot1 = file.path("output", "8_Analysis", currentColumn, paste("UMAP_Overlay-", currentColumn, ".pdf", sep = ""))
+      ggplot2::ggsave(currentFileName_plot1, width = 10, height = 10)
+
+
+    }
+
 
     foreach::foreach(c = 1:length(features)) %do%
     {
@@ -775,6 +807,16 @@ heatmapAbundancesGroups = function(feature = NULL, clustersToKeepRegex = NULL, m
 	  print(paste("Warning! The following cluster(s) was/were removed from the heatmap representation, mainly because all the metrics inside were identical for all the groups:", paste(samplesToRemove, collapse = ", ", sep = "")))
   }
 
+  columnsToRemove = as.numeric(which(colSums(data_abundance) == 0))
+
+  if(length(columnsToRemove) > 0)
+  {
+    samplesToRemove = colnames(data_abundance)[columnsToRemove]
+	  data_abundance = data_abundance[, -c(columnsToRemove)]
+
+	  print(paste("Warning! The following cluster(s) was/were removed from the heatmap representation, mainly because all the metrics inside were equal to 0 for all the groups:", paste(samplesToRemove, collapse = ", ", sep = "")))
+  }
+
   data_abundance = scale(data_abundance)
 
   min = min(data_abundance, na.rm = TRUE)
@@ -791,9 +833,11 @@ heatmapAbundancesGroups = function(feature = NULL, clustersToKeepRegex = NULL, m
     middle = mean(data_abundance, na.rm = TRUE)
   }
 
-  colors = c(seq(min, (middle - 1) - 0.01, length = 100), seq(middle - 1, middle + 1, length = 300), seq((middle + 1) + 0.01, max, length = 100))
+	separator = min(abs(min-middle), abs(max-middle))/2
+
+  colors = c(seq(min, (middle - separator) - 0.001, length = 25), seq(middle - separator, middle + separator, length = 50), seq((middle + separator) + 0.001, max, length = 25))
   colors = sort(colors)
-  customPalette = (grDevices::colorRampPalette(c("lightblue", "blue", "black", "yellow", "orange")))(n = 499)
+  customPalette = (grDevices::colorRampPalette(c("lightblue", "blue", "black", "yellow", "orange")))(n = 99)
 
   grDevices::pdf(file = file.path("output", "8_Analysis", paste("heatmap_", feature, "_", clustersToKeepRegex, "_unscaled.pdf", sep = "")), bg = "transparent", width = 20, height = 10, paper = "a4r")
 
@@ -937,11 +981,6 @@ exportParametersUsed = function(parametersToExport = NULL)
   cat(paste("parametersToKeep = c(\"", gsub(", ", "\", \"", paste(parametersToExport$parametersToKeep, collapse = ", ")), "\")", sep = ""))
   cat("\n")
   cat(paste("customNames = c(\"", gsub(", ", "\", \"", paste(parametersToExport$customNames, collapse = ", ")), "\")", sep = ""))
-  cat("\n\n")
-
-  cat("# 1_Transformation")
-  cat("\n")
-  cat(paste("transformationMethod = \"", parametersToExport$transformationMethod, "\"", sep = ""))
   cat("\n\n")
 
   cat("# 2_Normalization")
