@@ -39,7 +39,7 @@ Imports:
 	flowGate,
 	FastPG
 Remotes:
-  git::sararselitsky/FastPG,
+  git::https://github.com/sararselitsky/FastPG.git,
   bioc::release/Biobase,
   bioc::release/flowCore,
   bioc::release/flowStats,
