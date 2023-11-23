@@ -36,8 +36,17 @@ Imports:
 	utils,
 	stats,
 	FlowSOM,
-	FastPG,
-	flowGate
+	flowGate,
+	FastPG
+Remotes:
+  git::sararselitsky/FastPG,
+  bioc::release/Biobase,
+  bioc::release/flowCore,
+  bioc::release/flowStats,
+  bioc::release/flowWorkspace,
+  bioc::release/ggcyto,
+  bioc::release/FlowSOM,
+  bioc::release/flowGate
 Suggests: 
     knitr,
     rmarkdown,
