@@ -36,8 +36,10 @@ Imports:
 	utils,
 	stats,
 	FlowSOM,
-	FastPG,
-	flowGate
+	flowGate,
+	FastPG
+Remotes:
+    sararselitsky/FastPG
 Suggests: 
     knitr,
     rmarkdown,
