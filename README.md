@@ -11,6 +11,6 @@ Feel free to contact me (paul.regnier@aphp.fr or paul.jb.regnier@gmail.com) if y
 # Citation
 
 If you used _PICAFlow_ for your analyses, we kindly encourage you to cite our related Application Note published in the _Bioinformatics Advances_ journal:
-- Bioinformatics Advances: to update
-- PubMed: to update
+- Bioinformatics Advances: https://academic.oup.com/bioinformaticsadvances/article/3/1/vbad177/7458441
+- PubMed: https://pubmed.ncbi.nlm.nih.gov/38089110/
 - DOI: https://doi.org/10.1093/bioadv/vbad177
