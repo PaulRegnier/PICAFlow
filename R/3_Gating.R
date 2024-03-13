@@ -105,6 +105,7 @@ if(is.null(gatingset) == TRUE)
 
   ### TEMPORARY FIX FOR FLOWGATE ###
 
+  library("ggplot2")
 
   #' Apply gate from gs_gate_interactive
   #'
@@ -691,8 +692,7 @@ if(is.null(gatingset) == TRUE)
     ggplot2::theme(
       strip.background = ggplot2::element_blank(),
       strip.text = ggplot2::element_blank(),
-      legend.text = ggplot2::element_text(hjust = 0.5)
-    )
+      legend.text = ggplot2::element_text(hjust = 0.5))
 
   drawGates <- function(gg, addGateType, addCoords){
     if(addGateType == "polygonGate"){
