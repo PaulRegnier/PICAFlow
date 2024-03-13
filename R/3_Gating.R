@@ -34,6 +34,8 @@
 #'
 #' @param generatedGates A named list containing the gates that were generated during the gating process. This value should not be manually provided apart from what is described in the tutorial. Defaults to `NULL`.
 #'
+#' @param customBins A numeric vector defining the number of bins to use for data plotting after interactive gating. Defaults to `256`.
+#'
 #' @return If `exportAllPlots = TRUE`, the function will output PDF files containing the gating plots for each sample of the dataset. If `subset = TRUE`, the function will return a list of 2 elements named `flowset` (containing the actual gated `flowSet`) and `summary` (containing basic statistics about the gating such as the number of cells before gating, the number of cells gated and the proportion of cells gated).
 #'
 #' @importFrom foreach %do%
@@ -63,7 +65,7 @@ gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yPar
 
   plot = ggcyto::ggcyto(flowset[sampleToPlot], ggplot2::aes(x = !!rlang::sym(xParameter), y = !!rlang::sym(yParameter)))
 
-  plot = plot + ggplot2::geom_bin_2d(bins = 256)  # geom_hex() is bugging right now (28/11/2022)
+  plot = plot + ggplot2::geom_bin_2d(bins = customBins)  # geom_hex() is bugging right now (28/11/2022)
 
   if (length(sampleToPlot) > 1)
   {
@@ -265,7 +267,7 @@ if(is.null(gatingset) == TRUE)
   gs_apply_gating_strategy <- function(gs, gating_strategy, ...){
     if(methods::is(gs, "GatingSet")){
       purrr::pmap(gating_strategy,
-                  flowGate::gs_gate_interactive, gs = gs, ...)
+                  gs_gate_interactive, gs = gs, ...)
     } else {
       stop("'gs' must be a GatingSet")
     }
@@ -870,11 +872,11 @@ print(paste("Opening sample ", h, "/", length(specificGatesSampleIDs), " for spe
 if(length(grep("specialGate", nodes_temp)) == 0)
 {
 
-  currentSpecificGate = flowGate::gs_gate_interactive(gatingset, sample = currentSampleSpecificGate, filterId = "specialGate", dims = list(xParameter, yParameter), overlayGates = "globalGate")
+  currentSpecificGate = gs_gate_interactive(gatingset, sample = currentSampleSpecificGate, filterId = "specialGate", dims = list(xParameter, yParameter), overlayGates = "globalGate")
 } else
 {
 
-  currentSpecificGate = flowGate::gs_gate_interactive(gatingset, sample = currentSampleSpecificGate, filterId = "specialGate", dims = list(xParameter, yParameter), overlayGates = "globalGate", regate = TRUE)
+  currentSpecificGate = gs_gate_interactive(gatingset, sample = currentSampleSpecificGate, filterId = "specialGate", dims = list(xParameter, yParameter), overlayGates = "globalGate", regate = TRUE)
 
 }
 
