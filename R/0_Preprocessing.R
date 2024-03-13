@@ -40,7 +40,7 @@ setupWorkingDirectory = function()
 #'
 #' This function converts every `fcs` file in the `input` directory to a `flowFrame` object (from `flowCore` package) encapsulated into a `rds` file. It eventually renames the parameters used in the dataset if desired. This step helps to decrease the overall computing time and complexity of several next steps.
 #'
-#' @param conversionTable A tabular-delimited text file containing the appropriate information to convert one or several channels to other ones. This is used when the overall staining mix presents the same specificities but slightly different fluorophores depending on the samples. This typically occurs when the cytometer configuration is modified or when the cytometer is different from one batch to another. Defaults to `NULL`.
+#' @param conversionTable A tabular-delimited text file containing the appropriate information to convert one or several channels to other ones. This is used when the overall staining mix presents the same specificities but slightly different fluorophores depending on the samples. This typically occurs when the cytometer configuration is modified or when the cytometer is different from one batch to another. Defaults to `NULL`. We typically advise users to launch this function the first time with this argument set to `NULL`, in order to clearly see where the differences for names/descriptions are located. Then, users can construct and specify a conversion table with the `conversionTable` parameter which allows to resolve the differences observed in the dataset.
 #'
 #' The `conversionTable` table follows a pre-defined format: 4 columns in any order (`from_desc`, `to_desc`, `from_name` and `to_name`) and any given number of line, each line referring to a specific matching to be treated. For instance, if a line has the values `from_desc = CXCR5 B610-ECD-A`, `to_desc = CXCR5 ECD-A`, `from_name = FL2-A` and `to_name = FL11-A`, it means that any occurrence of a parameter (in any `rds` file) named `FL2-A` which also matches the description `CXCR5 B610-ECD-A` will see its values respectively replaced with `FL11-A` and `CXCR5 ECD-A`.
 #'
@@ -85,8 +85,13 @@ convertToRDS = function(conversionTable = NULL)
 
     if (is.null(conversionTable) == FALSE)
     {
-      currentFileParameterDescriptions = as.vector(currentData@parameters@data[, "desc"])
-      currentFileParameterNames = as.vector(currentData@parameters@data[, "name"])
+      currentFileParameterDescriptions = as.character(as.vector(currentData@parameters@data[, "desc"]))
+      currentFileParameterDescriptions[is.na(currentFileParameterDescriptions)] = "NA"
+      currentFileParameterDescriptions = make.unique(currentFileParameterDescriptions)
+
+      currentFileParameterNames = as.character(as.vector(currentData@parameters@data[, "name"]))
+      currentFileParameterNames[is.na(currentFileParameterNames)] = "NA"
+      currentFileParameterNames = make.unique(currentFileParameterNames)
 
       compensationMatricesSlot = as.numeric(which(lengths(flowStats::spillover(currentData)) > 0))
       compensationMatricesSlotName = names(flowStats::spillover(currentData))[compensationMatricesSlot]
@@ -99,11 +104,11 @@ convertToRDS = function(conversionTable = NULL)
 
         if (length(currentNameFromMatching) > 0)
         {
-          currentDescriptionTo = conversionTable[conversionTable$from_desc == currentDescriptionFrom, "to_desc"]
-          currentNameTo = conversionTable[conversionTable$from_desc == currentDescriptionFrom, "to_name"]
-          currentNameFrom = conversionTable[conversionTable$from_desc == currentDescriptionFrom, "from_name"]
+          currentDescriptionTo = conversionTable[currentNameFromMatching, "to_desc"]
+          currentNameTo = conversionTable[currentNameFromMatching, "to_name"]
+          currentNameFrom = conversionTable[currentNameFromMatching, "from_name"]
 
-          rowToReplaceID = which(currentData@parameters@data$desc == currentDescriptionFrom)
+          rowToReplaceID = as.numeric(which(currentFileParameterDescriptions == currentDescriptionFrom))
 
           currentData@parameters@data[rowToReplaceID, "desc"] = paste(currentDescriptionTo, "_replaced", sep = "")
           currentData@parameters@data[rowToReplaceID, "name"] = paste(currentNameTo, "_replaced", sep = "")
@@ -127,8 +132,10 @@ convertToRDS = function(conversionTable = NULL)
       colnames(currentData@description[compensationMatricesSlotName][[1]]) = gsub("_replaced", "", colnames(currentData@description[compensationMatricesSlotName][[1]]))
     }
 
-    currentFileDescriptions = as.vector(currentData@parameters@data[, "desc"])
-    currentFileDescriptions[is.na(currentFileDescriptions)] = paste("Empty Description #", c(1:length(which(is.na(currentFileDescriptions)))), sep = "")
+    currentFileDescriptions = as.character(as.vector(currentData@parameters@data[, "desc"]))
+
+    currentFileDescriptions[is.na(currentFileDescriptions)] = "NA"
+    currentFileDescriptions = make.unique(currentFileDescriptions)
 
     currentParametersInfos = list(as.vector(currentData@parameters@data[, "name"]), currentFileDescriptions)
 
@@ -164,23 +171,33 @@ convertToRDS = function(conversionTable = NULL)
 
   totalParameterNames_synthetic = NULL
 
-  foreach::foreach(n = 1:ncol(totalParametersNames_table)) %do%
+  if(ncol(totalParametersNames_table) == 1)
   {
-	currentParameterNames = as.character(totalParametersNames_table[, n])
 
-	if(length(unique(currentParameterNames)) > 1)
-	{
-		currentParameterNames_synthetic = paste("'", paste(unique(currentParameterNames), collapse = "' or '"), "'", sep = "")
+    totalParameterNames_synthetic = unique(totalParametersNames_table[, 1])
+  } else
+  {
+    foreach::foreach(n = 1:ncol(totalParametersNames_table)) %do%
+      {
+        currentParameterNames = as.character(totalParametersNames_table[, n])
 
-	} else
-	{
-			currentParameterNames_synthetic = unique(currentParameterNames)
+        if(length(unique(currentParameterNames)) > 1)
+        {
+          currentParameterNames_synthetic = paste("'", paste(unique(currentParameterNames), collapse = "' or '"), "'", sep = "")
 
-	}
+        } else
+        {
+          currentParameterNames_synthetic = unique(currentParameterNames)
 
-	totalParameterNames_synthetic = c(totalParameterNames_synthetic, currentParameterNames_synthetic)
+        }
+
+        totalParameterNames_synthetic = c(totalParameterNames_synthetic, currentParameterNames_synthetic)
+
+      }
 
   }
+
+
 
 
   totalParametersDescriptionsID = grep("descriptions", names(totalParametersInfos))
@@ -198,23 +215,32 @@ convertToRDS = function(conversionTable = NULL)
 
   totalParameterDescriptions_synthetic = NULL
 
-  foreach::foreach(n = 1:ncol(totalParametersDescriptions_table)) %do%
+  if(ncol(totalParametersDescriptions_table) == 1)
   {
-	currentParameterDescriptions = as.character(totalParametersDescriptions_table[, n])
 
-	if(length(unique(currentParameterDescriptions)) > 1)
-	{
-		currentParameterDescriptions_synthetic = paste("'", paste(unique(currentParameterDescriptions), collapse = "' or '"), "'", sep = "")
+    totalParameterDescriptions_synthetic = unique(totalParametersDescriptions_table[, 1])
+  } else
+  {
+    foreach::foreach(n = 1:ncol(totalParametersDescriptions_table)) %do%
+      {
+        currentParameterDescriptions = as.character(totalParametersDescriptions_table[, n])
 
-	} else
-	{
-			currentParameterDescriptions_synthetic = unique(currentParameterDescriptions)
+        if(length(unique(currentParameterDescriptions)) > 1)
+        {
+          currentParameterDescriptions_synthetic = paste("'", paste(unique(currentParameterDescriptions), collapse = "' or '"), "'", sep = "")
 
-	}
+        } else
+        {
+          currentParameterDescriptions_synthetic = unique(currentParameterDescriptions)
 
-	totalParameterDescriptions_synthetic = c(totalParameterDescriptions_synthetic, currentParameterDescriptions_synthetic)
+        }
+
+        totalParameterDescriptions_synthetic = c(totalParameterDescriptions_synthetic, currentParameterDescriptions_synthetic)
+
+      }
 
   }
+
 
 
 
