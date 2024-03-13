@@ -148,7 +148,10 @@ convertToRDS = function(conversionTable = NULL)
   totalParametersNamesID = grep("names", names(totalParametersInfos))
   totalParametersNames = totalParametersInfos[totalParametersNamesID]
 
+
   # Generate a list of unique sets of parameters names
+
+  n = NULL
 
   totalParametersNames_table = t(data.frame(totalParametersNames))
 
@@ -156,12 +159,12 @@ convertToRDS = function(conversionTable = NULL)
 
   if(length(totalParametersNames_tableDuplicatedIDs) > 0)
   {
-	totalParametersNames_table = totalParametersNames_table[-totalParametersNames_tableDuplicatedIDs, ]
+	totalParametersNames_table = data.frame(totalParametersNames_table[-totalParametersNames_tableDuplicatedIDs, ])
   }
 
   totalParameterNames_synthetic = NULL
 
-  foreach(n = 1:ncol(totalParametersNames_table)) %do%
+  foreach::foreach(n = 1:ncol(totalParametersNames_table)) %do%
   {
 	currentParameterNames = as.character(totalParametersNames_table[, n])
 
@@ -195,7 +198,7 @@ convertToRDS = function(conversionTable = NULL)
 
   totalParameterDescriptions_synthetic = NULL
 
-  foreach(n = 1:ncol(totalParametersDescriptions_table)) %do%
+  foreach::foreach(n = 1:ncol(totalParametersDescriptions_table)) %do%
   {
 	currentParameterDescriptions = as.character(totalParametersDescriptions_table[, n])
 
