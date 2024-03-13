@@ -138,7 +138,7 @@ if(is.null(gatingset) == TRUE)
       gate <- flowCore::rectangleGate(coords, filterId = filterId)
     }
     flowWorkspace::gs_pop_add(gs, gate, parent = subset)
-    recompute(gs)
+    flowWorkspace::recompute(gs)
 
     if(useBiex){
       varsBiex <- list(X = list(
