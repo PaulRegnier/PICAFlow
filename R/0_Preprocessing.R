@@ -8,9 +8,9 @@ setupWorkingDirectory = function()
 {
   workingDirectory = getwd()
 
-  if(dir.exists(file.path(workingDirectory)) == TRUE || length(grep("(input)|(output)|(rds)", list.dirs(file.path(workingDirectory)))) > 0)
+  if(dir.exists(file.path(workingDirectory)) == TRUE && length(grep("(input)|(output)|(rds)", list.dirs(file.path(workingDirectory)))) > 0)
   {
-    print(paste("The '", file.path(workingDirectory), "' working directory already exists or seems to contain folders ususally created by PICAFlow. To avoid any unwanted deletion of data, please check first that you already moved its content to another place then delete the '", file.path(workingDirectory), "' directory before running this function again.", sep = ""))
+    print(paste("The '", file.path(workingDirectory), "' working directory already exists and seems to contain folders ususally created by PICAFlow. To avoid any unwanted deletion of data, please check first that you already backed up its content to another place then delete the content of the '", file.path(workingDirectory), "' directory before running this function again.", sep = ""))
 
   } else
   {
