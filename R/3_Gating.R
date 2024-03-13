@@ -42,7 +42,7 @@
 #'
 #' @export
 
-gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yParameter = NULL, xlim = NULL, ylim = NULL, subset = FALSE, gateName = NULL, exportAllPlots = FALSE, samplesPerPage = 6, recursivity = FALSE, inverseGating = FALSE, specificGatesSampleIDs = NULL, redrawGate = TRUE, gatingset = NULL, generatedGates = NULL)
+gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yParameter = NULL, xlim = NULL, ylim = NULL, subset = FALSE, gateName = NULL, exportAllPlots = FALSE, samplesPerPage = 6, recursivity = FALSE, inverseGating = FALSE, specificGatesSampleIDs = NULL, redrawGate = TRUE, gatingset = NULL, generatedGates = NULL, customBins = 256)
 {
   a = NULL
   p = NULL
