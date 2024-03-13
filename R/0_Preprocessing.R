@@ -8,22 +8,32 @@ setupWorkingDirectory = function()
 {
   workingDirectory = getwd()
 
-  unlink(file.path(workingDirectory, "input"), recursive = TRUE)
-  dir.create(file.path(workingDirectory, "input"))
+  if(dir.exists(file.path(workingDirectory)) == TRUE || length(grep("(input)|(output)|(rds)", list.dirs(file.path(workingDirectory)))) > 0)
+  {
+    print(paste("The '", file.path(workingDirectory), "' working directory already exists or seems to contain folders ususally created by PICAFlow. To avoid any unwanted deletion of data, please check first that you already moved its content to another place then delete the '", file.path(workingDirectory), "' directory before running this function again.", sep = ""))
 
-  unlink(file.path(workingDirectory, "output"), recursive = TRUE)
-  dir.create(file.path(workingDirectory, "output"))
-  dir.create(file.path(workingDirectory, "output", "1_Transformation"))
-  dir.create(file.path(workingDirectory, "output", "2_Normalization"))
-  dir.create(file.path(workingDirectory, "output", "3_Gating"))
-  dir.create(file.path(workingDirectory, "output", "4_Downsampling"))
-  dir.create(file.path(workingDirectory, "output", "5_UMAP"))
-  dir.create(file.path(workingDirectory, "output", "6_FCS"))
-  dir.create(file.path(workingDirectory, "output", "7_Clustering"))
-  dir.create(file.path(workingDirectory, "output", "8_Analysis"))
+  } else
+  {
+    unlink(file.path(workingDirectory, "input"), recursive = TRUE)
+    dir.create(file.path(workingDirectory, "input"))
 
-  unlink(file.path(workingDirectory, "rds"), recursive = TRUE)
-  dir.create(file.path(workingDirectory, "rds"))
+    unlink(file.path(workingDirectory, "output"), recursive = TRUE)
+    dir.create(file.path(workingDirectory, "output"))
+    dir.create(file.path(workingDirectory, "output", "1_Transformation"))
+    dir.create(file.path(workingDirectory, "output", "2_Normalization"))
+    dir.create(file.path(workingDirectory, "output", "3_Gating"))
+    dir.create(file.path(workingDirectory, "output", "4_Downsampling"))
+    dir.create(file.path(workingDirectory, "output", "5_UMAP"))
+    dir.create(file.path(workingDirectory, "output", "6_FCS"))
+    dir.create(file.path(workingDirectory, "output", "7_Clustering"))
+    dir.create(file.path(workingDirectory, "output", "8_Analysis"))
+
+    unlink(file.path(workingDirectory, "rds"), recursive = TRUE)
+    dir.create(file.path(workingDirectory, "rds"))
+
+  }
+
+
 }
 
 #' Convert `fcs` files to `rds` files
@@ -137,13 +147,75 @@ convertToRDS = function(conversionTable = NULL)
 
   totalParametersNamesID = grep("names", names(totalParametersInfos))
   totalParametersNames = totalParametersInfos[totalParametersNamesID]
-  totalParametersNames = totalParametersNames[[1]]
+
+  # Generate a list of unique sets of parameters names
+
+  totalParametersNames_table = t(data.frame(totalParametersNames))
+
+  totalParametersNames_tableDuplicatedIDs = as.numeric(which(duplicated(totalParametersNames_table)))
+
+  if(length(totalParametersNames_tableDuplicatedIDs) > 0)
+  {
+	totalParametersNames_table = totalParametersNames_table[-totalParametersNames_tableDuplicatedIDs, ]
+  }
+
+  totalParameterNames_synthetic = NULL
+
+  foreach(n = 1:ncol(totalParametersNames_table)) %do%
+  {
+	currentParameterNames = as.character(totalParametersNames_table[, n])
+
+	if(length(unique(currentParameterNames)) > 1)
+	{
+		currentParameterNames_synthetic = paste("'", paste(unique(currentParameterNames), collapse = "' or '"), "'", sep = "")
+
+	} else
+	{
+			currentParameterNames_synthetic = unique(currentParameterNames)
+
+	}
+
+	totalParameterNames_synthetic = c(totalParameterNames_synthetic, currentParameterNames_synthetic)
+
+  }
+
 
   totalParametersDescriptionsID = grep("descriptions", names(totalParametersInfos))
   totalParametersDescriptions = totalParametersInfos[totalParametersDescriptionsID]
-  totalParametersDescriptions = totalParametersDescriptions[[1]]
 
-  totalParametersData = data.frame(totalParametersNames, totalParametersDescriptions, stringsAsFactors = FALSE)
+  totalParametersDescriptions_table = t(data.frame(totalParametersDescriptions))
+
+	totalParametersDescriptions_tableDuplicatedIDs = as.numeric(which(duplicated(totalParametersDescriptions_table)))
+
+  if(length(totalParametersDescriptions_tableDuplicatedIDs) > 0)
+  {
+	totalParametersDescriptions_table = totalParametersDescriptions_table[-totalParametersDescriptions_tableDuplicatedIDs, ]
+  }
+
+
+  totalParameterDescriptions_synthetic = NULL
+
+  foreach(n = 1:ncol(totalParametersDescriptions_table)) %do%
+  {
+	currentParameterDescriptions = as.character(totalParametersDescriptions_table[, n])
+
+	if(length(unique(currentParameterDescriptions)) > 1)
+	{
+		currentParameterDescriptions_synthetic = paste("'", paste(unique(currentParameterDescriptions), collapse = "' or '"), "'", sep = "")
+
+	} else
+	{
+			currentParameterDescriptions_synthetic = unique(currentParameterDescriptions)
+
+	}
+
+	totalParameterDescriptions_synthetic = c(totalParameterDescriptions_synthetic, currentParameterDescriptions_synthetic)
+
+  }
+
+
+
+  totalParametersData = data.frame(totalParameterNames_synthetic, totalParameterDescriptions_synthetic, stringsAsFactors = FALSE)
   totalParametersData = cbind(1:nrow(totalParametersData), totalParametersData)
   colnames(totalParametersData) = c("Parameter_ID", "Parameter_Name", "Parameter_Description")
 
