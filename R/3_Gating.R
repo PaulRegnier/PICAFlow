@@ -34,7 +34,7 @@
 #'
 #' @param generatedGates A named list containing the gates that were generated during the gating process. This value should not be manually provided apart from what is described in the tutorial. Defaults to `NULL`.
 #'
-#' @param customBins A numeric vector defining the number of bins to use for data plotting after interactive gating. Defaults to `256`.
+#' @param customBinWidth A numeric vector defining the width of the bins to use for data plotting after interactive gating. Defaults to `5000`.
 #'
 #' @return If `exportAllPlots = TRUE`, the function will output PDF files containing the gating plots for each sample of the dataset. If `subset = TRUE`, the function will return a list of 2 elements named `flowset` (containing the actual gated `flowSet`) and `summary` (containing basic statistics about the gating such as the number of cells before gating, the number of cells gated and the proportion of cells gated).
 #'
@@ -42,7 +42,7 @@
 #'
 #' @export
 
-gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yParameter = NULL, xlim = NULL, ylim = NULL, subset = FALSE, gateName = NULL, exportAllPlots = FALSE, samplesPerPage = 6, recursivity = FALSE, inverseGating = FALSE, specificGatesSampleIDs = NULL, redrawGate = TRUE, gatingset = NULL, generatedGates = NULL, customBins = 256)
+gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yParameter = NULL, xlim = NULL, ylim = NULL, subset = FALSE, gateName = NULL, exportAllPlots = FALSE, samplesPerPage = 6, recursivity = FALSE, inverseGating = FALSE, specificGatesSampleIDs = NULL, redrawGate = TRUE, gatingset = NULL, generatedGates = NULL, customBinWidth = 1000)
 {
   a = NULL
   p = NULL
@@ -65,7 +65,7 @@ gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yPar
 
   plot = ggcyto::ggcyto(flowset[sampleToPlot], ggplot2::aes(x = !!rlang::sym(xParameter), y = !!rlang::sym(yParameter)))
 
-  plot = plot + ggplot2::geom_bin_2d(bins = customBins)  # geom_hex() is bugging right now (28/11/2022)
+    plot = plot + ggplot2::geom_bin_2d(binwidth = customBinWidth)  # geom_hex() is bugging right now (28/11/2022)
 
   if (length(sampleToPlot) > 1)
   {
@@ -84,6 +84,8 @@ gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yPar
     myPars = ggcyto::ggcyto_par_set(limits = list(x = xlim, y = ylim))
     plot = plot + myPars
   }
+
+
 
   if (length(as.numeric(which(flowCore::markernames(flowset) == xParameter))) > 0)
   {
