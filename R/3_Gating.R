@@ -42,7 +42,7 @@
 #'
 #' @export
 
-gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yParameter = NULL, xlim = NULL, ylim = NULL, subset = FALSE, gateName = NULL, exportAllPlots = FALSE, samplesPerPage = 6, recursivity = FALSE, inverseGating = FALSE, specificGatesSampleIDs = NULL, redrawGate = TRUE, gatingset = NULL, generatedGates = NULL)
+gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yParameter = NULL, xlim = NULL, ylim = NULL, subset = FALSE, gateName = NULL, exportAllPlots = FALSE, samplesPerPage = 6, recursivity = FALSE, inverseGating = FALSE, specificGatesSampleIDs = NULL, redrawGate = TRUE, gatingset = NULL, generatedGates = NULL, customBins = 256)
 {
   a = NULL
   p = NULL
@@ -137,7 +137,7 @@ if(is.null(gatingset) == TRUE)
       names(coords) <- c(names(gg[[1]])[[3]], names(gg[[1]])[[4]])
       gate <- flowCore::rectangleGate(coords, filterId = filterId)
     }
-    gs_pop_add(gs, gate, parent = subset)
+    flowWorkspace::gs_pop_add(gs, gate, parent = subset)
     recompute(gs)
 
     if(useBiex){
