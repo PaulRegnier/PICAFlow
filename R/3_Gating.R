@@ -34,7 +34,7 @@
 #'
 #' @param generatedGates A named list containing the gates that were generated during the gating process. This value should not be manually provided apart from what is described in the tutorial. Defaults to `NULL`.
 #'
-#' @param customBinWidth A numeric vector defining the width of the bins to use for data plotting after interactive gating. Defaults to `5000`.
+#' @param customBinWidth A numeric vector defining the width of the bins to use for data plotting after interactive gating. Defaults to `5000`. High values (over `100` or `1000`) are better suited for linear parameters with very broad range (such FSC, SSC, etc.) whereas low values (under `10` or `1`) are better suited for log-transformed parameters with a small range.
 #'
 #' @return If `exportAllPlots = TRUE`, the function will output PDF files containing the gating plots for each sample of the dataset. If `subset = TRUE`, the function will return a list of 2 elements named `flowset` (containing the actual gated `flowSet`) and `summary` (containing basic statistics about the gating such as the number of cells before gating, the number of cells gated and the proportion of cells gated).
 #'
@@ -42,7 +42,7 @@
 #'
 #' @export
 
-gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yParameter = NULL, xlim = NULL, ylim = NULL, subset = FALSE, gateName = NULL, exportAllPlots = FALSE, samplesPerPage = 6, recursivity = FALSE, inverseGating = FALSE, specificGatesSampleIDs = NULL, redrawGate = TRUE, gatingset = NULL, generatedGates = NULL, customBinWidth = 1000)
+gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yParameter = NULL, xlim = NULL, ylim = NULL, subset = FALSE, gateName = NULL, exportAllPlots = FALSE, samplesPerPage = 6, recursivity = FALSE, inverseGating = FALSE, specificGatesSampleIDs = NULL, redrawGate = TRUE, gatingset = NULL, generatedGates = NULL, customBinWidth = 5000)
 {
   a = NULL
   p = NULL
@@ -992,7 +992,7 @@ foreach::foreach(i = 1:length(generatedGates)) %do%
 
     foreach::foreach(q = 1:length(pagesSamplesList)) %do%
     {
-      gateData(flowset = flowset, sampleToPlot = seq(pagesSamplesList[[q]][1], pagesSamplesList[[q]][2]), xParameter = xParameterOriginal, yParameter = yParameterOriginal, xlim = xlim, ylim = ylim, exportAllPlots = FALSE, recursivity = TRUE, inverseGating = inverseGating, specificGatesSampleIDs = specificGatesSampleIDs, redrawGate = FALSE, gatingset = gatingset, generatedGates = generatedGates)
+      gateData(flowset = flowset, sampleToPlot = seq(pagesSamplesList[[q]][1], pagesSamplesList[[q]][2]), xParameter = xParameterOriginal, yParameter = yParameterOriginal, xlim = xlim, ylim = ylim, exportAllPlots = FALSE, recursivity = TRUE, inverseGating = inverseGating, specificGatesSampleIDs = specificGatesSampleIDs, redrawGate = FALSE, gatingset = gatingset, generatedGates = generatedGates, customBinWidth = customBinWidth)
 
       if (dir.exists(file.path("output", "3_Gating", paste("x=", xParameterOriginal, "_y=", yParameterOriginal, sep = ""))))
       {
