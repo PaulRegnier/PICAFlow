@@ -339,6 +339,23 @@ subsetData = function(parametersToKeep = NULL, customNames = NULL)
 
     currentData@parameters@data[, "desc"] = customNames
 
+
+
+
+
+    compensationMatricesSlot = as.numeric(which(lengths(flowStats::spillover(currentData)) > 0))
+    compensationMatricesSlotName = names(flowStats::spillover(currentData))[compensationMatricesSlot]
+
+    # Removing useless parameters from the embedded compensation matrix
+
+    matchingCompensationNameID = which(colnames(currentData@description[compensationMatricesSlotName][[1]]) %in% parametersToKeep)
+
+    if (length(matchingCompensationNameID) > 0)
+    {
+
+      currentData@description[compensationMatricesSlotName][[1]] = currentData@description[compensationMatricesSlotName][[1]][matchingCompensationNameID, matchingCompensationNameID]
+    }
+
     saveRDS(currentData, file.path("rds", paste(currentFilename, ".rds", sep = "")))
 
     rm(currentData)
@@ -457,17 +474,45 @@ launchCompensationTuningShinyApp = function(fs_shiny = NULL, maxEventsNumber = 1
         compensationMatrix = readRDS(file.path("rds", "compensationMatrix.rds"))
       } else
       {
+        # Instead of taking the compensation matrix from the first sample of the dataset, it is better to extract the first available one which is not empty
+        totalCompensationMatrices = list()
 
-        compensationMatricesSlot = as.numeric(which(lengths(flowStats::spillover(fs_shiny[[1]])) > 0))
-        compensationMatrix = flowStats::spillover(fs_shiny[[1]])[[compensationMatricesSlot]]
+        foreach::foreach(m = 1:length(fs_shiny)) %do%
+          {
+            currentFlowFrame = fs_shiny[[m]]
+
+            compensationMatricesSlot = as.numeric(which(lengths(flowStats::spillover(currentFlowFrame)) > 0))
+            compensationMatrix = flowStats::spillover(currentFlowFrame)[[compensationMatricesSlot]]
+            rownames(compensationMatrix) = colnames(compensationMatrix)
+
+            if(all(colSums(compensationMatrix) == rowSums(compensationMatrix)) == TRUE)
+            {
+
+              totalCompensationMatrices[[m]] = "empty"
+            } else
+            {
+              totalCompensationMatrices[[m]] = "notEmpty"
+
+
+            }
+          }
+
+        notEmptyCompensationMatricesIDs = which(totalCompensationMatrices == "notEmpty")
+        referenceSampleIDForCompensationMatrix = notEmptyCompensationMatricesIDs[1]
+
+
+        compensationMatricesSlot = as.numeric(which(lengths(flowStats::spillover(fs_shiny[[referenceSampleIDForCompensationMatrix]])) > 0))
+        compensationMatrix = flowStats::spillover(fs_shiny[[referenceSampleIDForCompensationMatrix]])[[compensationMatricesSlot]]
         rownames(compensationMatrix) = colnames(compensationMatrix)
+
       }
 
 
       currentPairCompensations_1 = compensationMatrix[input$parameterX, input$parameterY]
       currentPairCompensations_2 = compensationMatrix[input$parameterY, input$parameterX]
 
-
+      print(currentPairCompensations_1)
+      print(currentPairCompensations_2)
 
       shiny::updateSliderInput(session, "parameterX_compensation", value = currentPairCompensations_1)
 
@@ -488,9 +533,38 @@ launchCompensationTuningShinyApp = function(fs_shiny = NULL, maxEventsNumber = 1
       } else
       {
 
-        compensationMatricesSlot = as.numeric(which(lengths(flowStats::spillover(fs_shiny[[1]])) > 0))
-        compensationMatrix = flowStats::spillover(fs_shiny[[1]])[[compensationMatricesSlot]]
+
+        # Instead of taking the compensation matrix from the first sample of the dataset, it is better to extract the first available one which is not empty
+        totalCompensationMatrices = list()
+
+        foreach::foreach(m = 1:length(fs_shiny)) %do%
+          {
+            currentFlowFrame = fs_shiny[[m]]
+
+            compensationMatricesSlot = as.numeric(which(lengths(flowStats::spillover(currentFlowFrame)) > 0))
+            compensationMatrix = flowStats::spillover(currentFlowFrame)[[compensationMatricesSlot]]
+            rownames(compensationMatrix) = colnames(compensationMatrix)
+
+            if(all(colSums(compensationMatrix) == rowSums(compensationMatrix)) == TRUE)
+            {
+
+              totalCompensationMatrices[[m]] = "empty"
+            } else
+            {
+              totalCompensationMatrices[[m]] = "notEmpty"
+
+
+            }
+          }
+
+        notEmptyCompensationMatricesIDs = which(totalCompensationMatrices == "notEmpty")
+        referenceSampleIDForCompensationMatrix = notEmptyCompensationMatricesIDs[1]
+
+
+        compensationMatricesSlot = as.numeric(which(lengths(flowStats::spillover(fs_shiny[[referenceSampleIDForCompensationMatrix]])) > 0))
+        compensationMatrix = flowStats::spillover(fs_shiny[[referenceSampleIDForCompensationMatrix]])[[compensationMatricesSlot]]
         rownames(compensationMatrix) = colnames(compensationMatrix)
+
       }
 
       compensationMatrix[input$parameterX, input$parameterY] = input$parameterX_compensation
@@ -547,9 +621,39 @@ launchCompensationTuningShinyApp = function(fs_shiny = NULL, maxEventsNumber = 1
       } else
       {
 
-        compensationMatricesSlot = as.numeric(which(lengths(flowStats::spillover(fs_shiny[[1]])) > 0))
-        compensationMatrix = flowStats::spillover(fs_shiny[[1]])[[compensationMatricesSlot]]
+
+        # Instead of taking the compensation matrix from the first sample of the dataset, it is better to extract the first available one which is not empty
+        totalCompensationMatrices = list()
+
+        foreach::foreach(m = 1:length(fs_shiny)) %do%
+          {
+            currentFlowFrame = fs_shiny[[m]]
+
+            compensationMatricesSlot = as.numeric(which(lengths(flowStats::spillover(currentFlowFrame)) > 0))
+            compensationMatrix = flowStats::spillover(currentFlowFrame)[[compensationMatricesSlot]]
+            rownames(compensationMatrix) = colnames(compensationMatrix)
+
+            if(all(colSums(compensationMatrix) == rowSums(compensationMatrix)) == TRUE)
+            {
+
+              totalCompensationMatrices[[m]] = "empty"
+            } else
+            {
+              totalCompensationMatrices[[m]] = "notEmpty"
+
+
+            }
+          }
+
+        notEmptyCompensationMatricesIDs = which(totalCompensationMatrices == "notEmpty")
+        referenceSampleIDForCompensationMatrix = notEmptyCompensationMatricesIDs[1]
+
+
+        compensationMatricesSlot = as.numeric(which(lengths(flowStats::spillover(fs_shiny[[referenceSampleIDForCompensationMatrix]])) > 0))
+        compensationMatrix = flowStats::spillover(fs_shiny[[referenceSampleIDForCompensationMatrix]])[[compensationMatricesSlot]]
         rownames(compensationMatrix) = colnames(compensationMatrix)
+
+
       }
 
 
