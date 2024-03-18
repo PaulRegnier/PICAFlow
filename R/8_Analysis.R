@@ -841,7 +841,7 @@ heatmapAbundancesGroups = function(feature = NULL, clustersToKeepRegex = NULL, m
 
   grDevices::pdf(file = file.path("output", "8_Analysis", paste("heatmap_", feature, "_", clustersToKeepRegex, "_unscaled.pdf", sep = "")), bg = "transparent", width = 20, height = 10, paper = "a4r")
 
-  gplots::heatmap.2(data_abundance, trace = "none", scale = "none", key = TRUE, keysize = 1, density.info = "none", col = customPalette, breaks = colors, cexRow = 0.5, cexCol = 0.8, margins = c(10, 10), dendrogram = "both")
+  gplots::heatmap.2(data_abundance, trace = "none", scale = "none", key = TRUE, keysize = 1, density.info = "none", col = customPalette, breaks = colors, cexRow = 0.35, cexCol = 0.35, margins = c(10, 10), dendrogram = "both")
 
   grDevices::dev.off()
 }

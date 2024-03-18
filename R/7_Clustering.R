@@ -946,13 +946,13 @@ clustersPhenotypesHeatmap = function(prefix = NULL, thresholds = NULL, metricUse
 
   grDevices::pdf(file = file.path("output", "7_Clustering", datasetFolder, paste("heatmap_clustersPhenotypes_rowScaled.pdf", sep = "")), bg = "transparent", width = 20, height = 10, paper = "a4r")
 
-  gplots::heatmap.2(totalClustersPhenotypes, trace = "none", scale = "row", key = TRUE, keysize = 1, density.info = "none", col = customPalette, cexRow = 0.5, cexCol = 0.5, margins = c(6, 8), dendrogram = "both")
+  gplots::heatmap.2(totalClustersPhenotypes, trace = "none", scale = "row", key = TRUE, keysize = 1, density.info = "none", col = customPalette, cexRow = 0.35, cexCol = 0.35, margins = c(6, 8), dendrogram = "both")
 
   grDevices::dev.off()
 
   grDevices::pdf(file = file.path("output", "7_Clustering", datasetFolder, paste("heatmap_clustersPhenotypes_rowUnscaled.pdf", sep = "")), bg = "transparent", width = 20, height = 10, paper = "a4r")
 
-  gplots::heatmap.2(totalClustersPhenotypes, trace = "none", scale = "none", key = TRUE, keysize = 1, density.info = "none", col = customPalette, breaks = colors, cexRow = 0.5, cexCol = 0.5, margins = c(6, 8), dendrogram = "both")
+  gplots::heatmap.2(totalClustersPhenotypes, trace = "none", scale = "none", key = TRUE, keysize = 1, density.info = "none", col = customPalette, breaks = colors, cexRow = 0.35, cexCol = 0.35, margins = c(6, 8), dendrogram = "both")
 
   grDevices::dev.off()
 
@@ -995,7 +995,7 @@ clustersPhenotypesHeatmap = function(prefix = NULL, thresholds = NULL, metricUse
 
     grDevices::pdf(file = file.path("output", "7_Clustering", datasetFolder, paste("heatmap_clustersPhenotypes_binary.pdf", sep = "")), bg = "transparent", width = 20, height = 10, paper = "a4r")
 
-    gplots::heatmap.2(totalClustersPhenotypes_binary, trace = "none", scale = "none", key = TRUE, keysize = 1, density.info = "none", col = c("blue", "yellow"), cexRow = 0.5, cexCol = 0.5, margins = c(6, 8), dendrogram = "both")
+    gplots::heatmap.2(totalClustersPhenotypes_binary, trace = "none", scale = "none", key = TRUE, keysize = 1, density.info = "none", col = c("blue", "yellow"), cexRow = 0.35, cexCol = 0.35, margins = c(6, 8), dendrogram = "both")
 
     grDevices::dev.off()
 
@@ -1079,6 +1079,12 @@ clustersPercentagesHeatmap = function(prefix = NULL, metricUsed = "median", data
 
   totalClustersPercentages = scale(totalClustersPercentages)
 
+  if(as.numeric(which(colSums(apply(totalClustersPercentages, 2, is.na)) > 0)) > 0)
+  {
+    colsToReplace = as.numeric(which(colSums(apply(totalClustersPercentages, 2, is.na)) > 0))
+    totalClustersPercentages[, colsToReplace] = 0
+  }
+
   min = min(totalClustersPercentages, na.rm = TRUE)
   max = max(totalClustersPercentages, na.rm = TRUE)
 
@@ -1107,7 +1113,7 @@ clustersPercentagesHeatmap = function(prefix = NULL, metricUsed = "median", data
 
     grDevices::pdf(file = file.path("output", "7_Clustering", datasetFolder, paste("heatmap_clustersPercentages_perGroup_columnScaled.pdf", sep = "")), bg = "transparent", width = 20, height = 10, paper = "a4r")
 
-    gplots::heatmap.2(totalClustersPercentages, trace = "none", scale = "none", key = TRUE, keysize = 1, density.info = "none", col = customPalette, breaks = colors, cexRow = 0.8, cexCol = 0.8, margins = c(20, 8), dendrogram = "both")
+    gplots::heatmap.2(totalClustersPercentages, trace = "none", scale = "none", key = TRUE, keysize = 1, density.info = "none", col = customPalette, breaks = colors, cexRow = 0.35, cexCol = 0.35, margins = c(20, 8), dendrogram = "both")
 
 
   } else if(mode == "sample")
@@ -1129,13 +1135,13 @@ clustersPercentagesHeatmap = function(prefix = NULL, metricUsed = "median", data
 
     grDevices::pdf(file = file.path("output", "7_Clustering", datasetFolder, paste("heatmap_clustersPercentages_perSample_columnScaled.pdf", sep = "")), bg = "transparent", width = 20, height = 10, paper = "a4r")
 
-    gplots::heatmap.2(totalClustersPercentages, trace = "none", scale = "none", key = TRUE, keysize = 1, density.info = "none", col = customPalette, breaks = colors, cexRow = 0.8, cexCol = 0.8, margins = c(18, 14), dendrogram = "both", RowSideColors = groupsPerSample)
+    gplots::heatmap.2(totalClustersPercentages, trace = "none", scale = "none", key = TRUE, keysize = 1, density.info = "none", col = customPalette, breaks = colors, cexRow = 0.35, cexCol = 0.35, margins = c(18, 14), dendrogram = "both", RowSideColors = groupsPerSample)
 
   } else
   {
     grDevices::pdf(file = file.path("output", "7_Clustering", datasetFolder, paste("heatmap_clustersPercentages_perGroup_columnScaled.pdf", sep = "")), bg = "transparent", width = 20, height = 10, paper = "a4r")
 
-    gplots::heatmap.2(totalClustersPercentages, trace = "none", scale = "none", key = TRUE, keysize = 1, density.info = "none", col = customPalette, breaks = colors, cexRow = 0.8, cexCol = 0.8, margins = c(20, 8), dendrogram = "both")
+    gplots::heatmap.2(totalClustersPercentages, trace = "none", scale = "none", key = TRUE, keysize = 1, density.info = "none", col = customPalette, breaks = colors, cexRow = 0.35, cexCol = 0.35, margins = c(20, 8), dendrogram = "both")
 
   }
 
