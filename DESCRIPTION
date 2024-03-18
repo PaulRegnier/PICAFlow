@@ -44,7 +44,7 @@ Remotes:
   bioc::release/flowWorkspace,
   bioc::release/flowStats,
   bioc::release/ggcyto,
-  bioc::release/flowGate,
+  git::https://github.com/PaulRegnier/flowGate.git
   bioc::release/FlowSOM,
   git::https://github.com/sararselitsky/FastPG.git
 Suggests: 
