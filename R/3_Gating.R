@@ -818,7 +818,7 @@ if(is.null(gatingset) == TRUE)
 
   ## Put again flowGate:: namespace when the fix is incorporated into flowGate officially
 
-  globalGate = gs_gate_interactive(gatingset, filterId = "globalGate", dims = list(xParameter, yParameter))
+  globalGate = PICAFlow::gs_gate_interactive(gatingset, filterId = "globalGate", dims = list(xParameter, yParameter))
 
 
 
@@ -873,12 +873,13 @@ print(paste("Opening sample ", h, "/", length(specificGatesSampleIDs), " for spe
 
 if(length(grep("specialGate", nodes_temp)) == 0)
 {
-
-  currentSpecificGate = gs_gate_interactive(gatingset, sample = currentSampleSpecificGate, filterId = "specialGate", dims = list(xParameter, yParameter), overlayGates = "globalGate")
+  # TO ALSO CORRECT WHEN FLOWGATE WILL BE FIXED
+  currentSpecificGate = PICAFlow::gs_gate_interactive(gatingset, sample = currentSampleSpecificGate, filterId = "specialGate", dims = list(xParameter, yParameter), overlayGates = "globalGate")
 } else
 {
+  # TO ALSO CORRECT WHEN FLOWGATE WILL BE FIXED
 
-  currentSpecificGate = gs_gate_interactive(gatingset, sample = currentSampleSpecificGate, filterId = "specialGate", dims = list(xParameter, yParameter), overlayGates = "globalGate", regate = TRUE)
+  currentSpecificGate = PICAFlow::gs_gate_interactive(gatingset, sample = currentSampleSpecificGate, filterId = "specialGate", dims = list(xParameter, yParameter), overlayGates = "globalGate", regate = TRUE)
 
 }
 
