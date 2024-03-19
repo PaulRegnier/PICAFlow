@@ -1079,7 +1079,7 @@ clustersPercentagesHeatmap = function(prefix = NULL, metricUsed = "median", data
 
   totalClustersPercentages = scale(totalClustersPercentages)
 
-  if(as.numeric(which(colSums(apply(totalClustersPercentages, 2, is.na)) > 0)) > 0)
+  if(length(as.numeric(which(colSums(apply(totalClustersPercentages, 2, is.na)) > 0))) > 0)
   {
     colsToReplace = as.numeric(which(colSums(apply(totalClustersPercentages, 2, is.na)) > 0))
     totalClustersPercentages[, colsToReplace] = 0

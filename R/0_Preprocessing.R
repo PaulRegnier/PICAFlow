@@ -384,6 +384,7 @@ launchCompensationTuningShinyApp = function(fs_shiny = NULL, maxEventsNumber = 1
   o = NULL
   a = NULL
   b = NULL
+  m = NULL
 
   samplesValuesList = as.list(seq(1, length(fs_shiny), 1))
   names(samplesValuesList) = rownames(Biobase::phenoData(fs_shiny))

@@ -20,7 +20,8 @@ gateData(
   specificGatesSampleIDs = NULL,
   redrawGate = TRUE,
   gatingset = NULL,
-  generatedGates = NULL
+  generatedGates = NULL,
+  customBinWidth = 5000
 )
 }
 \arguments{
@@ -55,6 +56,8 @@ gateData(
 \item{gatingset}{A \code{gatingset} object used internally to store data in a compatible way with \code{flowGate} package. This value should not be manually provided apart from what is described in the tutorial. Defaults to \code{NULL}.}
 
 \item{generatedGates}{A named list containing the gates that were generated during the gating process. This value should not be manually provided apart from what is described in the tutorial. Defaults to \code{NULL}.}
+
+\item{customBinWidth}{A numeric vector defining the width of the bins to use for data plotting after interactive gating. Defaults to \code{5000}. High values (over \code{100} or \code{1000}) are better suited for linear parameters with very broad range (such FSC, SSC, etc.) whereas low values (under \code{10} or \code{1}) are better suited for log-transformed parameters with a small range.}
 }
 \value{
 If \code{exportAllPlots = TRUE}, the function will output PDF files containing the gating plots for each sample of the dataset. If \code{subset = TRUE}, the function will return a list of 2 elements named \code{flowset} (containing the actual gated \code{flowSet}) and \code{summary} (containing basic statistics about the gating such as the number of cells before gating, the number of cells gated and the proportion of cells gated).
