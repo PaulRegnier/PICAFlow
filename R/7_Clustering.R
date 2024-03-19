@@ -392,13 +392,15 @@ determineParameterThreshold = function(data = NULL, parameter = NULL, displayedC
 #'
 #' @param datasetFolder A string defining in which folder to save the results. It can be either `full` for the full downsampled dataset, `training` for the training downsampled subdataset or `validation` for the validation downsampled subdataset. The value must match the origin of the data used. Defaults to `full`.
 #'
+#' @param customClusteringCut A numeric value defining which `h` value to use for the dendrogram tree cutting. This determines how strong the cluster collapsing will be (higher value means stronger collapsing, thus resulting in fewer clusters at the end). Defaults to `0`, which corresponds to no cut.
+#'
 #' @return Generated rds file is saved to `rds` directory.
 #'
 #' @importFrom foreach %do%
 #'
 #' @export
 
-collapseCloseClusters = function(data = NULL, parametersToUse = NULL, parametersToUseThresholds = NULL, metricUsed = "median", datasetFolder = "full")
+collapseCloseClusters = function(data = NULL, parametersToUse = NULL, parametersToUseThresholds = NULL, metricUsed = "median", datasetFolder = "full", customClusteringCut = 0)
 {
   a = NULL
   b = NULL
@@ -449,7 +451,7 @@ collapseCloseClusters = function(data = NULL, parametersToUse = NULL, parameters
   distance = stats::dist(clustersBinary, method = "euclidean")
   clustering = stats::hclust(distance, method = "complete")
 
-  clustering_cut = stats::cutree(clustering, h = 0)
+  clustering_cut = stats::cutree(clustering, h = customClusteringCut)
 
   clustersToPoolUnique = as.numeric(which(table(clustering_cut) > 1))
 
@@ -462,6 +464,16 @@ collapseCloseClusters = function(data = NULL, parametersToUse = NULL, parameters
     currentClusterNewName = maxOriginalClustersNb + c
     data[data$cluster %in% clusterToPoolDetails, "cluster"] = currentClusterNewName
   }
+
+  grDevices::pdf(file.path("output", "7_Clustering", datasetFolder, paste("clustersCollapsing_dendrogramForTreeCutting.pdf", sep = "")), paper = "a4r", width = 20)
+
+  plot(clustering, cex = 0.5)
+  abline(h = customClusteringCut, lwd = 2, col = "red")
+
+  grDevices::dev.off()
+
+  print(paste("Before collapsing: ", length(clustersToBrowse), " clusters", sep = ""))
+  print(paste("After collapsing: ", length(unique(data$cluster)), " clusters", sep = ""))
 
   saveRDS(data, file.path("rds", paste("7_Clustered_", datasetFolder, ".rds", sep = "")))
 
