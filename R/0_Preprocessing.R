@@ -340,8 +340,12 @@ subsetData = function(parametersToKeep = NULL, customNames = NULL)
     currentData@parameters@data[, "desc"] = customNames
 
 
+  # If the sample does not have any spillover matrices embedded, flowStats::spillover() will throw an error and crash
 
+  currentDataCompensationExists = try(flowStats::spillover(currentData), silent = TRUE)
 
+  if((class(currentDataCompensationExists) == "try-error") == FALSE)
+  {
 
     compensationMatricesSlot = as.numeric(which(lengths(flowStats::spillover(currentData)) > 0))
     compensationMatricesSlotName = names(flowStats::spillover(currentData))[compensationMatricesSlot]
@@ -353,8 +357,10 @@ subsetData = function(parametersToKeep = NULL, customNames = NULL)
     if (length(matchingCompensationNameID) > 0)
     {
 
-      currentData@description[compensationMatricesSlotName][[1]] = currentData@description[compensationMatricesSlotName][[1]][matchingCompensationNameID, matchingCompensationNameID]
-    }
+      currentData@description[compensationMatricesSlotName][[1]] =   currentData@description[compensationMatricesSlotName][[1]][matchingCompensationNameID, matchingCompensationNameID]
+
+      }
+  }
 
     saveRDS(currentData, file.path("rds", paste(currentFilename, ".rds", sep = "")))
 
