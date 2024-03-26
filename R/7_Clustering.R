@@ -327,7 +327,6 @@ applyClusterModel = function(dataTraining = dataTraining, dataValidation = dataV
   return(totalData)
 }
 
-
 #' Open the desired UMAP dataset
 #'
 #' This function allows to open the desired UMAP dataset for parameter threshold generation.
