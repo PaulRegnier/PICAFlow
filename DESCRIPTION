@@ -36,8 +36,7 @@ Imports:
   flowStats,
   ggcyto,
   FlowSOM,
-  flowGate,
-  FastPG
+  flowGate
 Remotes:
   bioc::release/Biobase,
   bioc::release/flowCore,
@@ -48,6 +47,7 @@ Remotes:
   bioc::release/FlowSOM,
   git::https://github.com/sararselitsky/FastPG.git
 Suggests: 
+    FastPG,
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)

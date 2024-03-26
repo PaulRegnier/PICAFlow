@@ -9,7 +9,8 @@ collapseCloseClusters(
   parametersToUse = NULL,
   parametersToUseThresholds = NULL,
   metricUsed = "median",
-  datasetFolder = "full"
+  datasetFolder = "full",
+  customClusteringCut = 0
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ collapseCloseClusters(
 \item{metricUsed}{A string defining the metric to be used. It can be either \code{mean} or \code{median}. Defaults to \code{median}.}
 
 \item{datasetFolder}{A string defining in which folder to save the results. It can be either \code{full} for the full downsampled dataset, \code{training} for the training downsampled subdataset or \code{validation} for the validation downsampled subdataset. The value must match the origin of the data used. Defaults to \code{full}.}
+
+\item{customClusteringCut}{A numeric value defining which \code{h} value to use for the dendrogram tree cutting. This determines how strong the cluster collapsing will be (higher value means stronger collapsing, thus resulting in fewer clusters at the end). Defaults to \code{0}, which corresponds to no cut.}
 }
 \value{
 Generated rds file is saved to \code{rds} directory.

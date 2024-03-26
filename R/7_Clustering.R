@@ -468,7 +468,7 @@ collapseCloseClusters = function(data = NULL, parametersToUse = NULL, parameters
   grDevices::pdf(file.path("output", "7_Clustering", datasetFolder, paste("clustersCollapsing_dendrogramForTreeCutting.pdf", sep = "")), paper = "a4r", width = 20)
 
   plot(clustering, cex = 0.5)
-  abline(h = customClusteringCut, lwd = 2, col = "red")
+  graphics::abline(h = customClusteringCut, lwd = 2, col = "red")
 
   grDevices::dev.off()
 
