@@ -27,6 +27,8 @@ plotFacets = function(parametersToPlot = NULL, maxSamplesNbPerPage = 10, folder 
   n = NULL
   h = NULL
   name = NULL
+  i = NULL
+  .data = NULL
 
   if (dir.exists(file.path("output", "2_Normalization", folder)))
   {
@@ -61,6 +63,19 @@ plotFacets = function(parametersToPlot = NULL, maxSamplesNbPerPage = 10, folder 
     currentParameter = colnames(currentData[[1]]@exprs)
 
     currentParameter_numberID = which(parametersToPlot %in% currentParameter)
+
+    peaksToPlot = 0
+
+    if(file.exists(file.path("output", "2_Normalization", "peaks", paste("peaksAnalysis_Parameter-", currentParameter_numberID, "_", currentParameter, ".txt", sep = ""))) == TRUE)
+    {
+
+     currentParameter_peaksValues = utils::read.table(file = file.path("output", "2_Normalization", "peaks", paste("peaksAnalysis_Parameter-", currentParameter_numberID, "_", currentParameter, ".txt", sep = "")), sep = "\t", header = TRUE)
+
+     rownames(currentParameter_peaksValues) = currentParameter_peaksValues$Samples
+     currentParameter_peaksValues$Samples = NULL
+
+     peaksToPlot = ncol(currentParameter_peaksValues)
+    }
 
     nbOfPages = ceiling(length(currentData)/maxSamplesNbPerPage)
 
@@ -115,11 +130,32 @@ plotFacets = function(parametersToPlot = NULL, maxSamplesNbPerPage = 10, folder 
 
       currentPage_sampleName = flowWorkspace::pData(Biobase::phenoData(currentData))[, "name"][currentPage_sampleIndices]
 
-      currentParameterTotalDataTemp = currentParameterTotalData[currentParameterTotalData$name %in% currentPage_sampleName, ]
+
+
+        currentParameterTotalDataTemp = currentParameterTotalData[currentParameterTotalData$name %in% currentPage_sampleName, ]
+
+
+
+    if(peaksToPlot > 0)
+    {
+
+      currentParameterTotalDataTemp[, colnames(currentParameter_peaksValues)] = currentParameter_peaksValues[currentParameterTotalDataTemp$name, ]
+    }
 
       grDevices::pdf(file.path("output", "2_Normalization", folder, paste("Parameter-", currentParameter_numberID, "_", currentParameter, "_samples-", currentPage_lowLimit, "-to-", currentPage_highLimit, ".pdf", sep = "")))
 
-      plot1 = ggplot2::ggplot(currentParameterTotalDataTemp, ggplot2::aes(currentParameterTotalDataTemp[, 1], fill = name)) + ggplot2::geom_density(alpha = 1, size = 0.5, na.rm = TRUE) + ggplot2::facet_grid(name ~ .) + ggplot2::scale_x_continuous(limits = c(currentPlot_minScale, currentPlot_maxScale))
+
+      plot1 = ggplot2::ggplot(currentParameterTotalDataTemp, ggplot2::aes(currentParameterTotalDataTemp[, 1], fill = name)) + ggplot2::geom_density(alpha = 1, linewidth = 0.5, na.rm = TRUE) + ggplot2::scale_x_continuous(limits = c(currentPlot_minScale, currentPlot_maxScale)) + ggplot2::facet_grid(name ~ .)
+
+      if(peaksToPlot > 0)
+      {
+        foreach::foreach(i = 1:peaksToPlot) %do%
+          {
+            plot1 = plot1 + ggplot2::geom_vline(ggplot2::aes(xintercept = .data[[paste("Peak", i, sep = "")]]), color = "black", linewidth = 0.5)
+
+          }
+      }
+
       print(plot1)
       grDevices::dev.off()
     }

@@ -823,7 +823,7 @@ plotUMAP_projectionFinalClusters = function(data = NULL, displayedCells = 1e+05,
 #'
 #' @param seed An integer defining the seed to use to obtain reproducible results. Defaults to `NULL`.
 #'
-#' @param maxMeta An integer defining the maximum number of clusters to generate. Please note that FlowSOM cannot algorithm cannot exceed 90 clusters maximum. However, FlowSOM will surely output way less than this number, depending on the dataset of interest. Defaults to `90`.
+#' @param maxMeta An integer defining the maximum number of clusters to generate. Please note that FlowSOM algorithm cannot exceed 90 clusters maximum. However, FlowSOM will surely output way less than this number, depending on the dataset of interest. Defaults to `90`.
 #'
 #' @param datasetFolder A string defining in which folder to save the results. It can be either `full` for the full downsampled dataset, `training` for the training downsampled subdataset or `validation` for the validation downsampled subdataset. The value must match the origin of the data used. Defaults to `full`.
 #'

@@ -201,17 +201,15 @@ if(length(grep("specialGate", nodes_temp)) == 0)
 
     if (inverseGating == TRUE)
     {
+
+
       plot = plot + ggcyto::geom_gate(generatedGates) + ggcyto::geom_stats(size = 3, color = "red")
 
 
 
       plot = plot + ggplot2::annotate("text", x = xlim[1], y = ylim[1], hjust = 0, vjust = "bottom", label = "Complementary gate!", color = "red", size = 3)
 
-foreach::foreach(i = 1:length(generatedGates)) %do%
-  {
-  generatedGates[[i]] = !generatedGates[[i]]
 
-}
 
 
     } else
@@ -224,6 +222,19 @@ foreach::foreach(i = 1:length(generatedGates)) %do%
 	    # For a very curious and not understandable reason, the "filter" function from "flowCore" does not output the results in the same format when called directly (within a script) or within a function (like here in the "gateData" function). So, the "summary" function cannot work anymore in our case. I had to directly specify which slot to use ("subSet") from the filter output ("resultFilter") then manually apply "summary" on it to make it work. This should be further investigated by the flowCore package maintainer.
 
 	    flowset = methods::as(flowset, "flowSet")
+
+
+	    if (inverseGating == TRUE)
+	    {
+	      foreach::foreach(i = 1:length(generatedGates)) %do%
+	        {
+	          generatedGates[[i]] = !generatedGates[[i]]
+
+	        }
+
+	    }
+
+
 
       resultFilter = flowCore::filter(flowset, generatedGates)
 
@@ -243,6 +254,17 @@ foreach::foreach(i = 1:length(generatedGates)) %do%
       result = flowCore::Subset(flowset, resultFilter)
 
       return(list(flowset = result, summary = resultFilterStats, generatedGates = generatedGates))
+
+      if (inverseGating == TRUE)
+      {
+        foreach::foreach(i = 1:length(generatedGates)) %do%
+          {
+            generatedGates[[i]] = !generatedGates[[i]]
+
+          }
+
+      }
+
     }
 
 

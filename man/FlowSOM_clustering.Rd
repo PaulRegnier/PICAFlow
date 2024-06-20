@@ -19,7 +19,7 @@ FlowSOM_clustering(
 
 \item{seed}{An integer defining the seed to use to obtain reproducible results. Defaults to \code{NULL}.}
 
-\item{maxMeta}{An integer defining the maximum number of clusters to generate. Please note that FlowSOM cannot algorithm cannot exceed 90 clusters maximum. However, FlowSOM will surely output way less than this number, depending on the dataset of interest. Defaults to \code{90}.}
+\item{maxMeta}{An integer defining the maximum number of clusters to generate. Please note that FlowSOM algorithm cannot exceed 90 clusters maximum. However, FlowSOM will surely output way less than this number, depending on the dataset of interest. Defaults to \code{90}.}
 
 \item{datasetFolder}{A string defining in which folder to save the results. It can be either \code{full} for the full downsampled dataset, \code{training} for the training downsampled subdataset or \code{validation} for the validation downsampled subdataset. The value must match the origin of the data used. Defaults to \code{full}.}
 }
