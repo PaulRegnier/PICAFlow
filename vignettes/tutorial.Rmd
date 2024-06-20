@@ -14,6 +14,6 @@ knitr::opts_chunk$set(
 )
 ```
 
-Due to the large size of the original Tutorial vignette (mainly because of the important number of figures we show), we decided to permanently move it to a static Web page, which can be freely accessible here: https://paul-regnier.fr/picaflow-tutorial/.
+Due to the large size of the original Tutorial vignette (mainly because of the important number of figures we show), we decided to permanently move it to a static Web page, which can be freely accessible here: https://paul-regnier.fr/tutoriel-picaflow/.
 
 Thank you for your understanding!
