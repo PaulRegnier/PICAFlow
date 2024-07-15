@@ -130,8 +130,11 @@ convertToRDS = function(conversionTable = NULL)
       colnames(currentData@exprs) = gsub("_replaced", "", colnames(currentData@exprs))
 
 
-
+      if (length(compensationMatricesSlotName) > 0)
+      {
         colnames(currentData@description[compensationMatricesSlotName][[1]]) = gsub("_replaced", "", colnames(currentData@description[compensationMatricesSlotName][[1]]))
+
+      }
 
     }
 
