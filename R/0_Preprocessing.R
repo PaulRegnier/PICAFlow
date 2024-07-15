@@ -93,8 +93,18 @@ convertToRDS = function(conversionTable = NULL)
       currentFileParameterNames[is.na(currentFileParameterNames)] = "NA"
       currentFileParameterNames = make.unique(currentFileParameterNames)
 
-      compensationMatricesSlot = as.numeric(which(lengths(flowStats::spillover(currentData)) > 0))
-      compensationMatricesSlotName = names(flowStats::spillover(currentData))[compensationMatricesSlot]
+      isCompensationMatricesPresent = try(flowStats::spillover(currentData), silent = TRUE)
+
+      if(class(isCompensationMatricesPresent) != "try-error")
+      {
+        compensationMatricesSlot = as.numeric(which(lengths(flowStats::spillover(currentData)) > 0))
+        compensationMatricesSlotName = names(flowStats::spillover(currentData))[compensationMatricesSlot]
+
+      } else
+      {
+        compensationMatricesSlotName = NULL
+
+      }
 
       foreach::foreach(b = 1:length(currentFileParameterDescriptions)) %do% {
         currentDescriptionFrom = currentFileParameterDescriptions[b]
@@ -116,10 +126,11 @@ convertToRDS = function(conversionTable = NULL)
           colToReplaceID = as.numeric(which(colnames(currentData@exprs) == currentNameFrom))
           colnames(currentData@exprs)[colToReplaceID] = paste(currentNameTo, "_replaced", sep = "")
 
-          matchingCompensationNameID = which(colnames(currentData@description[compensationMatricesSlotName][[1]]) == currentNameFrom)
 
-          if (length(matchingCompensationNameID) > 0 & length(compensationMatricesSlotName) > 0)
+          if (length(compensationMatricesSlotName) > 0)
           {
+            matchingCompensationNameID = which(colnames(currentData@description[compensationMatricesSlotName][[1]]) == currentNameFrom)
+
             colnames(currentData@description[compensationMatricesSlotName][[1]])[matchingCompensationNameID] = paste(currentNameTo, "_replaced", sep = "")
           }
         }
