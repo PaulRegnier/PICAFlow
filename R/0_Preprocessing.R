@@ -129,7 +129,10 @@ convertToRDS = function(conversionTable = NULL)
       currentData@parameters@data[, "name"] = gsub("_replaced", "", currentData@parameters@data[, "name"])
       colnames(currentData@exprs) = gsub("_replaced", "", colnames(currentData@exprs))
 
-      colnames(currentData@description[compensationMatricesSlotName][[1]]) = gsub("_replaced", "", colnames(currentData@description[compensationMatricesSlotName][[1]]))
+      if (length(matchingCompensationNameID) > 0)
+      {
+        colnames(currentData@description[compensationMatricesSlotName][[1]]) = gsub("_replaced", "", colnames(currentData@description[compensationMatricesSlotName][[1]]))
+      }
     }
 
     currentFileDescriptions = as.character(as.vector(currentData@parameters@data[, "desc"]))
