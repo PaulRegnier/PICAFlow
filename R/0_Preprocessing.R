@@ -118,7 +118,7 @@ convertToRDS = function(conversionTable = NULL)
 
           matchingCompensationNameID = which(colnames(currentData@description[compensationMatricesSlotName][[1]]) == currentNameFrom)
 
-          if (length(matchingCompensationNameID) > 0)
+          if (length(matchingCompensationNameID) > 0 & length(compensationMatricesSlotName) > 0)
           {
             colnames(currentData@description[compensationMatricesSlotName][[1]])[matchingCompensationNameID] = paste(currentNameTo, "_replaced", sep = "")
           }
@@ -129,7 +129,8 @@ convertToRDS = function(conversionTable = NULL)
       currentData@parameters@data[, "name"] = gsub("_replaced", "", currentData@parameters@data[, "name"])
       colnames(currentData@exprs) = gsub("_replaced", "", colnames(currentData@exprs))
 
-      colnames(currentData@description[compensationMatricesSlotName][[1]]) = gsub("_replaced", "", colnames(currentData@description[compensationMatricesSlotName][[1]]))
+        colnames(currentData@description[compensationMatricesSlotName][[1]]) = gsub("_replaced", "", colnames(currentData@description[compensationMatricesSlotName][[1]]))
+
     }
 
     currentFileDescriptions = as.character(as.vector(currentData@parameters@data[, "desc"]))
