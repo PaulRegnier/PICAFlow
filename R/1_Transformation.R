@@ -102,7 +102,7 @@ launchTransformationTuningShinyApp = function(fs_shiny = NULL)
   {
     names(samplesValuesList)[o] = paste(names(samplesValuesList)[o], " (#", nrow(fs_shiny[[o]]@exprs), ")", sep = "")
 
-    pooledValuesShiny[[o]] = flowCore::exprs(fs_shiny[[o]])[sample(nrow(fs_shiny[[o]]), round(mean(totalSampleLengths)/length(totalSampleLengths))), ]
+    pooledValuesShiny[[o]] = flowCore::exprs(fs_shiny[[o]])[sample(nrow(fs_shiny[[o]]), round(min(totalSampleLengths))), ]
   }
 
   pooledValuesShiny = do.call(rbind.data.frame, pooledValuesShiny)

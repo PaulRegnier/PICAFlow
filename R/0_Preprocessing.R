@@ -79,91 +79,107 @@ convertToRDS = function(conversionTable = NULL)
   opts = list(progress = progress)
 
   totalParametersInfos = foreach::foreach(a = filesToOpen, .packages = c("foreach", "flowCore", "tcltk"), .combine = "c", .options.snow = opts) %dopar%
-  {
-    currentData = flowCore::read.FCS(a, transformation = FALSE, truncate_max_range = FALSE, ignore.text.offset = TRUE)
-    currentFilename = gsub("(.+)/(.+)\\.fcs", "\\2", a)
-
-    if (is.null(conversionTable) == FALSE)
     {
-      currentFileParameterDescriptions = as.character(as.vector(currentData@parameters@data[, "desc"]))
-      currentFileParameterDescriptions[is.na(currentFileParameterDescriptions)] = "NA"
-      currentFileParameterDescriptions = make.unique(currentFileParameterDescriptions)
+      currentData = flowCore::read.FCS(a, transformation = FALSE, truncate_max_range = FALSE, ignore.text.offset = TRUE)
+      currentFilename = gsub("(.+)/(.+)\\.fcs", "\\2", a)
 
-      currentFileParameterNames = as.character(as.vector(currentData@parameters@data[, "name"]))
-      currentFileParameterNames[is.na(currentFileParameterNames)] = "NA"
-      currentFileParameterNames = make.unique(currentFileParameterNames)
-
-      isCompensationMatricesPresent = try(flowStats::spillover(currentData), silent = TRUE)
-
-      if(class(isCompensationMatricesPresent) != "try-error")
+      if (is.null(conversionTable) == FALSE)
       {
-        compensationMatricesSlot = as.numeric(which(lengths(flowStats::spillover(currentData)) > 0))
-        compensationMatricesSlotName = names(flowStats::spillover(currentData))[compensationMatricesSlot]
 
-      } else
-      {
-        compensationMatricesSlotName = NULL
-
-      }
-
-      foreach::foreach(b = 1:length(currentFileParameterDescriptions)) %do% {
-        currentDescriptionFrom = currentFileParameterDescriptions[b]
-        currentDescriptionName = currentFileParameterNames[b]
-
-        currentNameFromMatching = which((conversionTable$from_desc == currentDescriptionFrom) & conversionTable$from_name == currentDescriptionName)
-
-        if (length(currentNameFromMatching) > 0)
-        {
-          currentDescriptionTo = conversionTable[currentNameFromMatching, "to_desc"]
-          currentNameTo = conversionTable[currentNameFromMatching, "to_name"]
-          currentNameFrom = conversionTable[currentNameFromMatching, "from_name"]
-
-          rowToReplaceID = as.numeric(which(currentFileParameterDescriptions == currentDescriptionFrom))
-
-          currentData@parameters@data[rowToReplaceID, "desc"] = paste(currentDescriptionTo, "_replaced", sep = "")
-          currentData@parameters@data[rowToReplaceID, "name"] = paste(currentNameTo, "_replaced", sep = "")
-
-          colToReplaceID = as.numeric(which(colnames(currentData@exprs) == currentNameFrom))
-          colnames(currentData@exprs)[colToReplaceID] = paste(currentNameTo, "_replaced", sep = "")
-
-
-          if (length(compensationMatricesSlotName) > 0)
+        foreach(t = 1:ncol(conversionTable)) %do%
           {
-            matchingCompensationNameID = which(colnames(currentData@description[compensationMatricesSlotName][[1]]) == currentNameFrom)
+            currentColumnData = conversionTable[, t]
 
-            colnames(currentData@description[compensationMatricesSlotName][[1]])[matchingCompensationNameID] = paste(currentNameTo, "_replaced", sep = "")
+            currentColumnData_isNA = which(is.na(currentColumnData))
+
+            if(length(currentColumnData_isNA) > 0)
+            {
+              conversionTable[currentColumnData_isNA, t] = "NA"
+
+            }
+
+          }
+
+
+        currentFileParameterDescriptions = as.character(as.vector(currentData@parameters@data[, "desc"]))
+        currentFileParameterDescriptions[is.na(currentFileParameterDescriptions)] = "NA"
+        currentFileParameterDescriptions = make.unique(currentFileParameterDescriptions)
+
+        currentFileParameterNames = as.character(as.vector(currentData@parameters@data[, "name"]))
+        currentFileParameterNames[is.na(currentFileParameterNames)] = "NA"
+        currentFileParameterNames = make.unique(currentFileParameterNames)
+
+        isCompensationMatricesPresent = try(flowStats::spillover(currentData), silent = TRUE)
+
+        if(class(isCompensationMatricesPresent) != "try-error")
+        {
+          compensationMatricesSlot = as.numeric(which(lengths(flowStats::spillover(currentData)) > 0))
+          compensationMatricesSlotName = names(flowStats::spillover(currentData))[compensationMatricesSlot]
+
+        } else
+        {
+          compensationMatricesSlotName = NULL
+
+        }
+
+        foreach::foreach(b = 1:length(currentFileParameterDescriptions)) %do% {
+          currentDescriptionFrom = currentFileParameterDescriptions[b]
+          currentDescriptionName = currentFileParameterNames[b]
+
+          currentNameFromMatching = which((conversionTable$from_desc == currentDescriptionFrom) & conversionTable$from_name == currentDescriptionName)
+
+          if (length(currentNameFromMatching) > 0)
+          {
+            currentDescriptionTo = conversionTable[currentNameFromMatching, "to_desc"]
+            currentNameTo = conversionTable[currentNameFromMatching, "to_name"]
+            currentNameFrom = conversionTable[currentNameFromMatching, "from_name"]
+
+            rowToReplaceID = as.numeric(which(currentFileParameterDescriptions == currentDescriptionFrom))
+
+            currentData@parameters@data[rowToReplaceID, "desc"] = paste(currentDescriptionTo, "_replaced", sep = "")
+            currentData@parameters@data[rowToReplaceID, "name"] = paste(currentNameTo, "_replaced", sep = "")
+
+            colToReplaceID = as.numeric(which(colnames(currentData@exprs) == currentNameFrom))
+            colnames(currentData@exprs)[colToReplaceID] = paste(currentNameTo, "_replaced", sep = "")
+
+
+            if (length(compensationMatricesSlotName) > 0)
+            {
+              matchingCompensationNameID = which(colnames(currentData@description[compensationMatricesSlotName][[1]]) == currentNameFrom)
+
+              colnames(currentData@description[compensationMatricesSlotName][[1]])[matchingCompensationNameID] = paste(currentNameTo, "_replaced", sep = "")
+            }
           }
         }
+
+        currentData@parameters@data[, "desc"] = gsub("_replaced", "", currentData@parameters@data[, "desc"])
+        currentData@parameters@data[, "name"] = gsub("_replaced", "", currentData@parameters@data[, "name"])
+        colnames(currentData@exprs) = gsub("_replaced", "", colnames(currentData@exprs))
+
+
+        if (length(compensationMatricesSlotName) > 0)
+        {
+          colnames(currentData@description[compensationMatricesSlotName][[1]]) = gsub("_replaced", "", colnames(currentData@description[compensationMatricesSlotName][[1]]))
+
+        }
+
       }
 
-      currentData@parameters@data[, "desc"] = gsub("_replaced", "", currentData@parameters@data[, "desc"])
-      currentData@parameters@data[, "name"] = gsub("_replaced", "", currentData@parameters@data[, "name"])
-      colnames(currentData@exprs) = gsub("_replaced", "", colnames(currentData@exprs))
+      currentFileDescriptions = as.character(as.vector(currentData@parameters@data[, "desc"]))
 
+      currentFileDescriptions[is.na(currentFileDescriptions)] = "NA"
+      currentFileDescriptions = make.unique(currentFileDescriptions)
 
-      if (length(compensationMatricesSlotName) > 0)
-      {
-        colnames(currentData@description[compensationMatricesSlotName][[1]]) = gsub("_replaced", "", colnames(currentData@description[compensationMatricesSlotName][[1]]))
+      currentParametersInfos = list(as.vector(currentData@parameters@data[, "name"]), currentFileDescriptions)
 
-      }
+      names(currentParametersInfos) = c(paste("names_", currentFilename, sep = ""), paste("descriptions_", currentFilename, sep = ""))
 
+      saveRDS(currentData, file.path("rds", paste(currentFilename, ".rds", sep = "")))
+
+      gc()
+
+      return(currentParametersInfos)
     }
-
-    currentFileDescriptions = as.character(as.vector(currentData@parameters@data[, "desc"]))
-
-    currentFileDescriptions[is.na(currentFileDescriptions)] = "NA"
-    currentFileDescriptions = make.unique(currentFileDescriptions)
-
-    currentParametersInfos = list(as.vector(currentData@parameters@data[, "name"]), currentFileDescriptions)
-
-    names(currentParametersInfos) = c(paste("names_", currentFilename, sep = ""), paste("descriptions_", currentFilename, sep = ""))
-
-    saveRDS(currentData, file.path("rds", paste(currentFilename, ".rds", sep = "")))
-
-    gc()
-
-    return(currentParametersInfos)
-  }
 
   close(pb)
 
@@ -183,7 +199,7 @@ convertToRDS = function(conversionTable = NULL)
 
   if(length(totalParametersNames_tableDuplicatedIDs) > 0)
   {
-	totalParametersNames_table = data.frame(totalParametersNames_table[-totalParametersNames_tableDuplicatedIDs, ])
+    totalParametersNames_table = data.frame(totalParametersNames_table[-totalParametersNames_tableDuplicatedIDs, ])
   }
 
   totalParameterNames_synthetic = NULL
@@ -222,11 +238,11 @@ convertToRDS = function(conversionTable = NULL)
 
   totalParametersDescriptions_table = t(data.frame(totalParametersDescriptions))
 
-	totalParametersDescriptions_tableDuplicatedIDs = as.numeric(which(duplicated(totalParametersDescriptions_table)))
+  totalParametersDescriptions_tableDuplicatedIDs = as.numeric(which(duplicated(totalParametersDescriptions_table)))
 
   if(length(totalParametersDescriptions_tableDuplicatedIDs) > 0)
   {
-	totalParametersDescriptions_table = data.frame(totalParametersDescriptions_table[-totalParametersDescriptions_tableDuplicatedIDs, ])
+    totalParametersDescriptions_table = data.frame(totalParametersDescriptions_table[-totalParametersDescriptions_tableDuplicatedIDs, ])
   }
 
 
@@ -267,7 +283,6 @@ convertToRDS = function(conversionTable = NULL)
 
   return(totalParametersData)
 }
-
 
 #' Export new `rds` files from a previously generated pooled version
 #'
