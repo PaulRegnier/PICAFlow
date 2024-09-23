@@ -2,5 +2,5 @@
 
 .onLoad = function(libname, pkgname)
 {
-  PICAFlow::checkNewVersion()
+  checkNewVersion()
 }
