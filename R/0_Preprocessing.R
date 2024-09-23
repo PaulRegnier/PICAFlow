@@ -1,3 +1,24 @@
+#' Check new version
+#'
+#' This function checks whether there is a new available version for `PICAFlow` in the GitHub repository. If this is the case, users are notified.
+#'
+#' @export
+
+checkNewVersion = function()
+{
+  latestRelease = gh("GET /repos/{owner}/{repo}/releases", owner = "PaulRegnier", repo = "PICAFlow")
+  latestRelease = as.character(releases[[1]][["tag_name"]])
+  installedRelease = as.character(packageVersion("PICAFlow"))
+
+  if(installedRelease != latestRelease)
+  {
+    print(paste("[WARNING] The version of PICAFlow which is currently installed on this computer ('", installedRelease, "') does not match with the latest version available on GitHub ('", latestRelease, "'). We kindly invite you to update to the latest version to avoid any troubles related to bugs and/or missing features. You can launch the update with the following command: 'devtools::install_github('PaulRegnier/PICAFlow')'. Thank you for your understanding.", sep = ""))
+  } else
+  {
+    print(paste("[NOTE] The version of PICAFlow which is currently installed on this computer (", installedRelease, ") is up-to-date.", sep = ""))
+  }
+}
+
 #' Setup the working directory
 #'
 #' This function setups the working directory. It does not take any input argument but assumes that the `workingDirectory` variable is set to the path of interest using the base R `setwd()` function. From this path, everything will be wiped and `input`, `output` and `rds` directories will be created. The `output`` directory will also contain several other specific directories that will be used in the subsequent analyses.
@@ -417,7 +438,7 @@ subsetData = function(parametersToKeep = NULL, customNames = NULL)
 #'
 #' @export
 
-launchCompensationTuningShinyApp = function(fs_shiny = NULL, maxEventsNumber = 10000)
+launchCompensationTuningShinyApp = function(fs_shiny = NULL, maxEventsNumber = 10000, options = list())
 {
   o = NULL
   a = NULL
@@ -718,7 +739,7 @@ launchCompensationTuningShinyApp = function(fs_shiny = NULL, maxEventsNumber = 1
     })
   }
 
-  shiny::shinyApp(ui = ui, server = server)
+  shiny::shinyApp(ui = ui, server = server, options = options)
 }
 
 

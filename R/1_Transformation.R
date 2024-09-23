@@ -81,7 +81,7 @@ mergeSamples = function(suffix = NULL, useStructureFromReferenceSample = 0)
 #'
 #' @export
 
-launchTransformationTuningShinyApp = function(fs_shiny = NULL)
+launchTransformationTuningShinyApp = function(fs_shiny = NULL, options = list())
 {
   o = NULL
   a = NULL
@@ -688,7 +688,7 @@ launchTransformationTuningShinyApp = function(fs_shiny = NULL)
     })
   }
 
-  shiny::shinyApp(ui = ui, server = server)
+  shiny::shinyApp(ui = ui, server = server, options = options)
 }
 
 #' Transform `rds` files
