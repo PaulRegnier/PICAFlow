@@ -6,9 +6,9 @@
 
 checkNewVersion = function()
 {
-  latestRelease = gh("GET /repos/{owner}/{repo}/releases", owner = "PaulRegnier", repo = "PICAFlow")
-  latestRelease = as.character(releases[[1]][["tag_name"]])
-  installedRelease = as.character(packageVersion("PICAFlow"))
+  latestRelease = gh::gh("GET /repos/{owner}/{repo}/releases", owner = "PaulRegnier", repo = "PICAFlow")
+  latestRelease = as.character(latestRelease[[1]][["tag_name"]])
+  installedRelease = as.character(utils::packageVersion("PICAFlow"))
 
   if(installedRelease != latestRelease)
   {
@@ -107,7 +107,7 @@ convertToRDS = function(conversionTable = NULL)
       if (is.null(conversionTable) == FALSE)
       {
 
-        foreach(t = 1:ncol(conversionTable)) %do%
+        foreach::foreach(t = 1:ncol(conversionTable)) %do%
           {
             currentColumnData = conversionTable[, t]
 
@@ -433,6 +433,8 @@ subsetData = function(parametersToKeep = NULL, customNames = NULL)
 #' @param fs_shiny A flowSet generated using `mergeData()` function. Defaults to `NULL`.
 #'
 #' @param maxEventsNumber The maximum number of events to use for data displaying. Defaults to `10000`.
+#'
+#' @param options A list containing any desired parameter to pass to the Shiny application
 #'
 #' @importFrom foreach %do%
 #'

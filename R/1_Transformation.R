@@ -77,6 +77,8 @@ mergeSamples = function(suffix = NULL, useStructureFromReferenceSample = 0)
 #'
 #' @param fs_shiny A flowSet generated using `mergeData()` function. Defaults to `NULL`.
 #'
+#' @param options A list containing any desired parameter to pass to the Shiny application
+#'
 #' @importFrom foreach %do%
 #'
 #' @export

@@ -4,12 +4,18 @@
 \alias{launchCompensationTuningShinyApp}
 \title{Launch the R Shiny interactive application for edition of data compensations}
 \usage{
-launchCompensationTuningShinyApp(fs_shiny = NULL, maxEventsNumber = 10000)
+launchCompensationTuningShinyApp(
+  fs_shiny = NULL,
+  maxEventsNumber = 10000,
+  options = list()
+)
 }
 \arguments{
 \item{fs_shiny}{A flowSet generated using \code{mergeData()} function. Defaults to \code{NULL}.}
 
 \item{maxEventsNumber}{The maximum number of events to use for data displaying. Defaults to \code{10000}.}
+
+\item{options}{A list containing any desired parameter to pass to the Shiny application}
 }
 \description{
 This function launches a R Shiny interactive application which helps to visually adjust data compensations.

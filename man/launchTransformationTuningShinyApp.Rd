@@ -4,10 +4,12 @@
 \alias{launchTransformationTuningShinyApp}
 \title{Launch the R Shiny interactive application for visualization of data logicle transformation}
 \usage{
-launchTransformationTuningShinyApp(fs_shiny = NULL)
+launchTransformationTuningShinyApp(fs_shiny = NULL, options = list())
 }
 \arguments{
 \item{fs_shiny}{A flowSet generated using \code{mergeData()} function. Defaults to \code{NULL}.}
+
+\item{options}{A list containing any desired parameter to pass to the Shiny application}
 }
 \description{
 This function launches a R Shiny interactive application which helps to visually determine and adjust the parameters for logicle transformation of data.
