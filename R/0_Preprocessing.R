@@ -4,7 +4,7 @@
 #'
 #' @export
 
-checkNewVersion = function()
+checkNewVersion = function(...)
 {
   latestRelease = gh::gh("GET /repos/{owner}/{repo}/releases", owner = "PaulRegnier", repo = "PICAFlow")
   latestRelease = as.character(latestRelease[[1]][["tag_name"]])
