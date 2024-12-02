@@ -12,7 +12,7 @@ checkNewVersion = function(...)
 
   if(installedRelease != latestRelease)
   {
-    print(paste("[WARNING] The version of PICAFlow which is currently installed on this computer ('", installedRelease, "') does not match with the latest version available on GitHub ('", latestRelease, "'). We kindly invite you to update to the latest version to avoid any troubles related to bugs and/or missing features. You can launch the update with the following command: 'devtools::install_github('PaulRegnier/PICAFlow', force = TRUE)'. Thank you for your understanding.", sep = ""))
+    print(paste("[WARNING] The version of PICAFlow which is currently installed on this computer ('", installedRelease, "') does not match with the latest version available on GitHub ('", latestRelease, "'). We kindly invite you to update to the latest version to avoid any troubles related to bugs and/or missing features. You can launch the update with the following command: 'devtools::install_github('PaulRegnier/PICAFlow', force = TRUE)'. Please see the tutorial for more information. Thank you for your understanding.", sep = ""))
   } else
   {
     print(paste("[NOTE] The version of PICAFlow which is currently installed on this computer (", installedRelease, ") is up-to-date.", sep = ""))
