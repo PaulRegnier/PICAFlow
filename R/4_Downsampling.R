@@ -65,7 +65,7 @@ poolData = function(flowSet = NULL, groupVector = NULL, parametersToKeep = NULL,
     {
       currentSampleID = currentGroupSamplesID[a]
       currentFileData = flowSet[[currentSampleID]]
-      currentSampleName = gsub("(.+)_(.+)_(.+)", "\\3", flowSet@phenoData@data$name[currentSampleID])
+      currentSampleName = gsub("(.+)_Group-(.+)_Sample-(.+)", "\\3", flowSet@phenoData@data$name[currentSampleID])
 
       res = data.frame(currentFileData@exprs, stringsAsFactors = FALSE)
 
