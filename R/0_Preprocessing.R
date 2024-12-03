@@ -191,7 +191,12 @@ convertToRDS = function(conversionTable = NULL)
       currentFileDescriptions[is.na(currentFileDescriptions)] = "NA"
       currentFileDescriptions = make.unique(currentFileDescriptions)
 
-      currentParametersInfos = list(as.vector(currentData@parameters@data[, "name"]), currentFileDescriptions)
+      currentSampleOrder = order(as.vector(currentData@parameters@data[, "name"]))
+
+      currentFileNames = as.vector(currentData@parameters@data[, "name"])[currentSampleOrder]
+      currentFileDescriptions = currentFileDescriptions[currentSampleOrder]
+
+      currentParametersInfos = list(currentFileNames, currentFileDescriptions)
 
       names(currentParametersInfos) = c(paste("names_", currentFilename, sep = ""), paste("descriptions_", currentFilename, sep = ""))
 
