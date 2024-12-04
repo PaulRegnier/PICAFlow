@@ -11,7 +11,9 @@ convertToRDS(conversionTable = NULL)
 
 The \code{conversionTable} table follows a pre-defined format: 4 columns in any order (\code{from_desc}, \code{to_desc}, \code{from_name} and \code{to_name}) and any given number of line, each line referring to a specific matching to be treated. For instance, if a line has the values \verb{from_desc = CXCR5 B610-ECD-A}, \verb{to_desc = CXCR5 ECD-A}, \code{from_name = FL2-A} and \code{to_name = FL11-A}, it means that any occurrence of a parameter (in any \code{rds} file) named \code{FL2-A} which also matches the description \verb{CXCR5 B610-ECD-A} will see its values respectively replaced with \code{FL11-A} and \verb{CXCR5 ECD-A}.
 
-Please note that the renaming both affects the parameters of each file AND the parameters in each self-contained compensation matrix.}
+Please note that the renaming both affects the parameters of each file AND the parameters in each self-contained compensation matrix.
+
+If needed, it is also possible to ask for the deletion of one or several channels in the dataset by specifying the word \code{DELETE} in the \code{to_desc} and \code{to_name} columns of the \code{conversionTable} table. In this case, it (or they) will simply be deleted from the samples which match with the associated pair of \code{from_desc} and \code{from_name} parameters used in the table.}
 }
 \value{
 Generated \code{rds} files are saved to \code{rds} directory. The function also returns a matrix of all unique parameters (once correctly renamed) used in the dataset.

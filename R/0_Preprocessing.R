@@ -1,6 +1,7 @@
 #' Check new version
 #'
 #' This function checks whether there is a new available version for `PICAFlow` in the GitHub repository. If this is the case, users are notified.
+#' @param ... Useful to transfer other arguments to the function.
 #'
 #' @export
 
@@ -66,6 +67,8 @@ setupWorkingDirectory = function()
 #' The `conversionTable` table follows a pre-defined format: 4 columns in any order (`from_desc`, `to_desc`, `from_name` and `to_name`) and any given number of line, each line referring to a specific matching to be treated. For instance, if a line has the values `from_desc = CXCR5 B610-ECD-A`, `to_desc = CXCR5 ECD-A`, `from_name = FL2-A` and `to_name = FL11-A`, it means that any occurrence of a parameter (in any `rds` file) named `FL2-A` which also matches the description `CXCR5 B610-ECD-A` will see its values respectively replaced with `FL11-A` and `CXCR5 ECD-A`.
 #'
 #' Please note that the renaming both affects the parameters of each file AND the parameters in each self-contained compensation matrix.
+#'
+#' If needed, it is also possible to ask for the deletion of one or several channels in the dataset by specifying the word `DELETE` in the `to_desc` and `to_name` columns of the `conversionTable` table. In this case, it (or they) will simply be deleted from the samples which match with the associated pair of `from_desc` and `from_name` parameters used in the table.
 #'
 #' @return Generated `rds` files are saved to `rds` directory. The function also returns a matrix of all unique parameters (once correctly renamed) used in the dataset.
 #'
@@ -143,6 +146,8 @@ convertToRDS = function(conversionTable = NULL)
 
         }
 
+        parametersToRemoveID = NULL
+
         foreach::foreach(b = 1:length(currentFileParameterDescriptions)) %do% {
           currentDescriptionFrom = currentFileParameterDescriptions[b]
           currentDescriptionName = currentFileParameterNames[b]
@@ -157,20 +162,35 @@ convertToRDS = function(conversionTable = NULL)
 
             rowToReplaceID = as.numeric(which(currentFileParameterDescriptions == currentDescriptionFrom))
 
-            currentData@parameters@data[rowToReplaceID, "desc"] = paste(currentDescriptionTo, "_replaced", sep = "")
-            currentData@parameters@data[rowToReplaceID, "name"] = paste(currentNameTo, "_replaced", sep = "")
-
-            colToReplaceID = as.numeric(which(colnames(currentData@exprs) == currentNameFrom))
-            colnames(currentData@exprs)[colToReplaceID] = paste(currentNameTo, "_replaced", sep = "")
-
-
-            if (length(compensationMatricesSlotName) > 0)
+            if(currentDescriptionTo == "DELETE" & currentNameTo == "DELETE")
             {
-              matchingCompensationNameID = which(colnames(currentData@description[compensationMatricesSlotName][[1]]) == currentNameFrom)
+              parametersToRemoveID = c(parametersToRemoveID, rowToReplaceID)
+              # currentData = currentData[, -rowToReplaceID]
+            } else
+            {
+              currentData@parameters@data[rowToReplaceID, "desc"] = paste(currentDescriptionTo, "_replaced", sep = "")
+              currentData@parameters@data[rowToReplaceID, "name"] = paste(currentNameTo, "_replaced", sep = "")
 
-              colnames(currentData@description[compensationMatricesSlotName][[1]])[matchingCompensationNameID] = paste(currentNameTo, "_replaced", sep = "")
+              colToReplaceID = as.numeric(which(colnames(currentData@exprs) == currentNameFrom))
+              colnames(currentData@exprs)[colToReplaceID] = paste(currentNameTo, "_replaced", sep = "")
+
+
+              if (length(compensationMatricesSlotName) > 0)
+              {
+                matchingCompensationNameID = which(colnames(currentData@description[compensationMatricesSlotName][[1]]) == currentNameFrom)
+
+                colnames(currentData@description[compensationMatricesSlotName][[1]])[matchingCompensationNameID] = paste(currentNameTo, "_replaced", sep = "")
+              }
+
             }
+
+
           }
+        }
+
+        if(is.null(parametersToRemoveID) == FALSE & length(parametersToRemoveID) > 0)
+        {
+          currentData = currentData[, -parametersToRemoveID]
         }
 
         currentData@parameters@data[, "desc"] = gsub("_replaced", "", currentData@parameters@data[, "desc"])

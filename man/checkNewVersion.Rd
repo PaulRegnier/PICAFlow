@@ -4,7 +4,10 @@
 \alias{checkNewVersion}
 \title{Check new version}
 \usage{
-checkNewVersion()
+checkNewVersion(...)
+}
+\arguments{
+\item{...}{Useful to transfer other arguments to the function.}
 }
 \description{
 This function checks whether there is a new available version for \code{PICAFlow} in the GitHub repository. If this is the case, users are notified.
