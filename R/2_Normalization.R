@@ -145,7 +145,7 @@ plotFacets = function(parametersToPlot = NULL, maxSamplesNbPerPage = 10, folder 
       grDevices::pdf(file.path("output", "2_Normalization", folder, paste("Parameter-", currentParameter_numberID, "_", currentParameter, "_samples-", currentPage_lowLimit, "-to-", currentPage_highLimit, ".pdf", sep = "")))
 
 
-      plot1 = ggplot2::ggplot(currentParameterTotalDataTemp, ggplot2::aes(currentParameterTotalDataTemp[, 1], fill = name)) + ggplot2::geom_density(alpha = 1, linewidth = 0.5, na.rm = TRUE) + ggplot2::scale_x_continuous(limits = c(currentPlot_minScale, currentPlot_maxScale)) + ggplot2::facet_grid(name ~ .)
+      plot1 = ggplot2::ggplot(currentParameterTotalDataTemp, ggplot2::aes(currentParameterTotalDataTemp[, 1], fill = name)) + ggplot2::geom_density(alpha = 1, linewidth = 0.5, na.rm = TRUE) + ggplot2::scale_x_continuous(limits = c(currentPlot_minScale, currentPlot_maxScale)) + ggplot2::facet_grid(name ~ .) + theme(legend.text=element_text(size = 6))
 
       if(peaksToPlot > 0)
       {
@@ -711,7 +711,7 @@ normalizeData = function(try = TRUE, max.lms.sequence = NULL, suffix = NULL, bas
   progress = function(n) utils::setTxtProgressBar(pb, n)
   opts = list(progress = progress)
 
-  normalizationResult = foreach::foreach(a = filesToOpen, .export = c("gaussNorm2", "extract.landmarksNC2", "extract.landmarks2", "filter.lms2"), .packages = c("foreach", "flowCore", "tcltk", "attempt", "flowStats"), .combine = "c", .options.snow = opts) %dopar%
+  normalizationResult = foreach::foreach(a = filesToOpen, .export = c("gaussNorm2", "extract.landmarksNC2", "extract.landmarks2", "filter.lms2", "compute.confidence", "extract.base.landmarks", "landmarker", "match.all.lms", "normalize.one.expr", "remBoundary", "restoreBoundary", "score.lms", "best.match", "register.channel", "returny", "choose.nk", "combinations.itr", "register.function", "match.score", "gau"), .packages = c("foreach", "flowCore", "tcltk", "attempt", "flowStats"), .combine = "c", .options.snow = opts) %dopar%
   {
     # Debug only: a = filesToOpen[1]
 
