@@ -127,11 +127,9 @@ convertToRDS = function(conversionTable = NULL)
 
         currentFileParameterDescriptions = as.character(as.vector(currentData@parameters@data[, "desc"]))
         currentFileParameterDescriptions[is.na(currentFileParameterDescriptions)] = "NA"
-        currentFileParameterDescriptions = make.unique(currentFileParameterDescriptions)
 
         currentFileParameterNames = as.character(as.vector(currentData@parameters@data[, "name"]))
         currentFileParameterNames[is.na(currentFileParameterNames)] = "NA"
-        currentFileParameterNames = make.unique(currentFileParameterNames)
 
         isCompensationMatricesPresent = try(flowStats::spillover(currentData), silent = TRUE)
 
@@ -160,7 +158,7 @@ convertToRDS = function(conversionTable = NULL)
             currentNameTo = conversionTable[currentNameFromMatching, "to_name"]
             currentNameFrom = conversionTable[currentNameFromMatching, "from_name"]
 
-            rowToReplaceID = as.numeric(which(currentFileParameterDescriptions == currentDescriptionFrom))
+            rowToReplaceID = as.numeric(which(currentFileParameterDescriptions == currentDescriptionFrom & currentFileParameterNames == currentDescriptionName))
 
             if(currentDescriptionTo == "DELETE" & currentNameTo == "DELETE")
             {
@@ -209,7 +207,6 @@ convertToRDS = function(conversionTable = NULL)
       currentFileDescriptions = as.character(as.vector(currentData@parameters@data[, "desc"]))
 
       currentFileDescriptions[is.na(currentFileDescriptions)] = "NA"
-      currentFileDescriptions = make.unique(currentFileDescriptions)
 
       currentSampleOrder = order(as.vector(currentData@parameters@data[, "name"]))
 
