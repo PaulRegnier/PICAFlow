@@ -52,6 +52,7 @@ gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yPar
 
   xParameterOriginal = xParameter
   yParameterOriginal = yParameter
+  gateNameOriginal = gateName
 
   if (length(sampleToPlot) > 1)
   {
@@ -296,17 +297,17 @@ if(length(grep("specialGate", nodes_temp)) == 0)
 
     foreach::foreach(q = 1:length(pagesSamplesList)) %do%
     {
-      gateData(flowset = flowset, sampleToPlot = seq(pagesSamplesList[[q]][1], pagesSamplesList[[q]][2]), xParameter = xParameterOriginal, yParameter = yParameterOriginal, xlim = xlim, ylim = ylim, exportAllPlots = FALSE, recursivity = TRUE, inverseGating = inverseGating, specificGatesSampleIDs = specificGatesSampleIDs, redrawGate = FALSE, gatingset = gatingset, generatedGates = generatedGates, customBinWidth = customBinWidth)
+      gateData(flowset = flowset, sampleToPlot = seq(pagesSamplesList[[q]][1], pagesSamplesList[[q]][2]), xParameter = xParameterOriginal, yParameter = yParameterOriginal, xlim = xlim, ylim = ylim, exportAllPlots = FALSE, recursivity = TRUE, inverseGating = inverseGating, specificGatesSampleIDs = specificGatesSampleIDs, redrawGate = FALSE, gatingset = gatingset, generatedGates = generatedGates, customBinWidth = customBinWidth, gateName = gateNameOriginal)
 
-      if (dir.exists(file.path("output", "3_Gating", paste("x=", xParameterOriginal, "_y=", yParameterOriginal, sep = ""))))
+      if (dir.exists(file.path("output", "3_Gating", paste("name=", gateNameOriginal, "_x=", xParameterOriginal, "_y=", yParameterOriginal, sep = ""))))
       {
-        unlink(file.path("output", "3_Gating", paste("x=", xParameterOriginal, "_y=", yParameterOriginal, "*.*", sep = "")))
+        unlink(file.path("output", "3_Gating", paste("name=", gateNameOriginal, "_x=", xParameterOriginal, "_y=", yParameterOriginal, "*.*", sep = "")))
       } else
       {
-        dir.create(file.path("output", "3_Gating", paste("x=", xParameterOriginal, "_y=", yParameterOriginal, sep = "")))
+        dir.create(file.path("output", "3_Gating", paste("name=", gateNameOriginal, "_x=", xParameterOriginal, "_y=", yParameterOriginal, sep = "")))
       }
 
-      ggplot2::ggsave(filename = paste("x=", xParameterOriginal, "_y=", yParameterOriginal, "_samples-", pagesSamplesList[[q]][1], "-to-", pagesSamplesList[[q]][2], ".pdf", sep = ""), device = "pdf", path = file.path("output", "3_Gating", paste("x=", xParameterOriginal, "_y=", yParameterOriginal, sep = "")))
+      ggplot2::ggsave(filename = paste("name=", gateNameOriginal, "_x=", xParameterOriginal, "_y=", yParameterOriginal, "_samples-", pagesSamplesList[[q]][1], "-to-", pagesSamplesList[[q]][2], ".pdf", sep = ""), device = "pdf", path = file.path("output", "3_Gating", paste("name=", gateNameOriginal, "_x=", xParameterOriginal, "_y=", yParameterOriginal, sep = "")))
     }
   }
 
