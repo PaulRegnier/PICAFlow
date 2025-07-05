@@ -250,20 +250,20 @@ convertToRDS = function(conversionTable = NULL)
   if(ncol(totalParametersNames_table) == 1)
   {
 
-    totalParameterNames_synthetic = unique(totalParametersNames_table[, 1])
+    totalParameterNames_synthetic = totalParametersNames_table[, 1]
   } else
   {
     foreach::foreach(n = 1:ncol(totalParametersNames_table)) %do%
       {
         currentParameterNames = as.character(totalParametersNames_table[, n])
 
-        if(length(unique(currentParameterNames)) > 1)
+        if(length(currentParameterNames) > 1)
         {
           currentParameterNames_synthetic = paste("'", paste(unique(currentParameterNames), collapse = "' or '"), "'", sep = "")
 
         } else
         {
-          currentParameterNames_synthetic = unique(currentParameterNames)
+          currentParameterNames_synthetic = currentParameterNames
 
         }
 
@@ -294,20 +294,20 @@ convertToRDS = function(conversionTable = NULL)
   if(ncol(totalParametersDescriptions_table) == 1)
   {
 
-    totalParameterDescriptions_synthetic = unique(totalParametersDescriptions_table[, 1])
+    totalParameterDescriptions_synthetic = totalParametersDescriptions_table[, 1]
   } else
   {
     foreach::foreach(n = 1:ncol(totalParametersDescriptions_table)) %do%
       {
         currentParameterDescriptions = as.character(totalParametersDescriptions_table[, n])
 
-        if(length(unique(currentParameterDescriptions)) > 1)
+        if(length(currentParameterDescriptions) > 1)
         {
           currentParameterDescriptions_synthetic = paste("'", paste(unique(currentParameterDescriptions), collapse = "' or '"), "'", sep = "")
 
         } else
         {
-          currentParameterDescriptions_synthetic = unique(currentParameterDescriptions)
+          currentParameterDescriptions_synthetic = currentParameterDescriptions
 
         }
 
