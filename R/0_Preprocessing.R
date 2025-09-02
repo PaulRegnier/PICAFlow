@@ -102,7 +102,7 @@ convertToRDS = function(conversionTable = NULL)
   progress = function(n) utils::setTxtProgressBar(pb, n)
   opts = list(progress = progress)
 
-  totalParametersInfos = foreach::foreach(a = filesToOpen, .packages = c("foreach", "flowCore", "tcltk"), .combine = "c", .options.snow = opts) %dopar%
+  totalParametersInfos = foreach::foreach(a = filesToOpen, .packages = c("foreach", "flowCore"), .combine = "c", .options.snow = opts) %dopar%
     {
       currentData = flowCore::read.FCS(a, transformation = FALSE, truncate_max_range = FALSE, ignore.text.offset = TRUE)
       currentFilename = gsub("(.+)/(.+)\\.fcs", "\\2", a)
@@ -358,7 +358,7 @@ exportRDSFilesFromPool = function(RDSFileToUse = NULL, coresNumber = 2)
   opts = list(progress = progress)
 
 
-  foreach::foreach(a = samplesToExport, .packages = c("foreach", "flowCore", "tcltk"), .options.snow = opts) %dopar%
+  foreach::foreach(a = samplesToExport, .packages = c("foreach", "flowCore"), .options.snow = opts) %dopar%
     {
 
       flowSetToSplit = readRDS(file.path("rds", paste(RDSFileToUse, ".rds", sep = "")))
@@ -405,7 +405,7 @@ subsetData = function(parametersToKeep = NULL, customNames = NULL)
   progress = function(n) utils::setTxtProgressBar(pb, n)
   opts = list(progress = progress)
 
-  foreach::foreach(a = filesToOpen, .packages = c("foreach", "flowCore", "tcltk"), .options.snow = opts) %dopar%
+  foreach::foreach(a = filesToOpen, .packages = c("foreach", "flowCore"), .options.snow = opts) %dopar%
   {
     currentData = readRDS(a)
     currentFilename = gsub("(.+)/(.+)\\.rds", "\\2", a)
@@ -797,7 +797,7 @@ compensateData = function(parametersToCompensate = NULL, useCustomCompensationMa
   progress = function(n) utils::setTxtProgressBar(pb, n)
   opts = list(progress = progress)
 
-  foreach::foreach(a = filesToOpen, .packages = c("foreach", "flowCore", "tcltk"), .options.snow = opts) %dopar%
+  foreach::foreach(a = filesToOpen, .packages = c("foreach", "flowCore"), .options.snow = opts) %dopar%
   {
     # Debug only : a = rds.files[1:coresNumber]
 

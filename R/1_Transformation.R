@@ -24,7 +24,7 @@ mergeSamples = function(suffix = NULL, useStructureFromReferenceSample = 0)
 
   filesToOpen = dir(file.path("rds"), pattern = suffix, full.names = TRUE)
 
-  pb = tcltk::tkProgressBar("Merging data...", paste("File 0/", length(filesToOpen), sep = ""), 0, length(filesToOpen), 200)
+  print("Merging data...")
 
   pooledData = list()
   foreach::foreach(a = 1:length(filesToOpen)) %do%
@@ -58,10 +58,8 @@ mergeSamples = function(suffix = NULL, useStructureFromReferenceSample = 0)
 
     }
 
-    tcltk::setTkProgressBar(pb, a, label = paste("File ", a, "/", length(filesToOpen), sep = ""))
+    print(paste("File ", a, "/", length(filesToOpen), sep = ""))
   }
-
-  close(pb)
 
   pooledData = methods::as(pooledData, "flowSet")
   saveRDS(pooledData, file.path("rds", paste("pooledSamples.rds", sep = "")))
@@ -725,7 +723,7 @@ transformData = function(parametersToTransform = NULL)
   progress = function(n) utils::setTxtProgressBar(pb, n)
   opts = list(progress = progress)
 
-  foreach::foreach(a = filesToOpen, .packages = c("foreach", "flowCore", "tcltk"), .options.snow = opts) %dopar%
+  foreach::foreach(a = filesToOpen, .packages = c("foreach", "flowCore"), .options.snow = opts) %dopar%
   {
     # Debug only : a = rds.files[1:coresNumber]
 
@@ -839,7 +837,7 @@ exportPerParameter = function(parametersToExport = NULL, nCoresToExploit = NULL)
 
   filesToOpen = dir(file.path("rds"), full.names = TRUE)
 
-  foreach::foreach(a = parametersToExport, .packages = c("foreach", "flowCore", "tcltk"), .options.snow = opts) %dopar%
+  foreach::foreach(a = parametersToExport, .packages = c("foreach", "flowCore"), .options.snow = opts) %dopar%
   {
     # Debug only : a = parametersToKeep[1]
 

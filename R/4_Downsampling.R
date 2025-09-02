@@ -51,7 +51,7 @@ poolData = function(flowSet = NULL, groupVector = NULL, parametersToKeep = NULL,
   totalSamplesNames = NULL
   totalSamplesGroups = NULL
 
-  pb = tcltk::tkProgressBar("Busy...", paste("Group 0/", length(uniqueGroups), sep = ""), 0, length(uniqueGroups), 200)
+  print("Pooling data...")
 
   foreach::foreach(g = 1:length(uniqueGroups)) %do%
   {
@@ -114,11 +114,8 @@ poolData = function(flowSet = NULL, groupVector = NULL, parametersToKeep = NULL,
     names(totalDataList)[g] = currentGroupID
     gc()
 
-    tcltk::setTkProgressBar(pb, g, label = paste("Group ", g, "/", length(uniqueGroups), sep = ""))
+    print(paste("Group ", g, "/", length(uniqueGroups), sep = ""))
   }
-
-  close(pb)
-
 
   if(length(samplesToRemoveNames) == 1)
 	{
@@ -148,7 +145,7 @@ poolData = function(flowSet = NULL, groupVector = NULL, parametersToKeep = NULL,
   progress = function(n) utils::setTxtProgressBar(pb, n)
   opts = list(progress = progress)
 
-  estimateThresholdTable = foreach::foreach(z = thresholdsToTest, .packages = c("foreach", "tcltk"), .options.snow = opts) %dopar%
+  estimateThresholdTable = foreach::foreach(z = thresholdsToTest, .packages = c("foreach"), .options.snow = opts) %dopar%
   {
     editedTotalDataList = totalDataList
 

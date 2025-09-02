@@ -296,7 +296,7 @@ applyClusterModel = function(dataTraining = dataTraining, dataValidation = dataV
   progress = function(n) utils::setTxtProgressBar(pb, n)
   opts = list(progress = progress)
 
-  totalValidationClusters = foreach::foreach(b = 1:length(chunksLimits), .packages = c("foreach", "tcltk", "class"), .options.snow = opts) %dopar%
+  totalValidationClusters = foreach::foreach(b = 1:length(chunksLimits), .packages = c("foreach", "class"), .options.snow = opts) %dopar%
   {
     lowLimitChunk = chunksLimits[[b]][1]
     highLimitChunk = chunksLimits[[b]][2]
@@ -568,7 +568,7 @@ exportClustersStatsAndPlots = function(data = NULL, folder = NULL, parametersToU
 
   uniqueGroups = unique(data$group)
 
-  out = foreach::foreach(a = 1:length(uniqueClusters), .packages = c("foreach", "ggplot2", "tcltk", "matrixStats"), .options.snow = opts) %dopar%
+  out = foreach::foreach(a = 1:length(uniqueClusters), .packages = c("foreach", "ggplot2", "matrixStats"), .options.snow = opts) %dopar%
   {
     currentCluster = uniqueClusters[a]
 

@@ -54,7 +54,7 @@ exportFCS = function(data = NULL, datasetFolder = "full")
 
   totalCorrespondenceSamplesID = data.frame(matrix(NA, nrow = 0, ncol = 5), stringsAsFactors = FALSE)
 
-  pb = tcltk::tkProgressBar("Exporting FCS files...", paste("Group 0/", groupsToPlot, sep = ""), 0, groupsToPlot, 0, 300)
+  print("Exporting FCS files...")
 
   foreach::foreach(a = 1:groupsToPlot) %do%
   {
@@ -169,12 +169,10 @@ exportFCS = function(data = NULL, datasetFolder = "full")
       flowCore::write.FCS(subsetDataSampleFCS, filename = file.path(workingDirectory, "output", "6_FCS", "samples", datasetFolder, paste("Group-", currentGroup, "_Sample-", currentSample, "_", datasetFolder, ".fcs", sep = "")), delimiter = "|")
     }
 
-    tcltk::setTkProgressBar(pb, a, label = paste("Group ", a, "/", groupsToPlot, sep = ""))
+    print(paste("Group ", a, "/", groupsToPlot, sep = ""))
 
     gc()
   }
-
-  close(pb)
 
   fullTotalData = flowCore::flowFrame(fullTotalData)
 

@@ -67,7 +67,7 @@ determineOptimalUMAPParameters = function(data = NULL, nNeighborsToTest = NULL, 
 
   plotsList = list()
 
-  pb = tcltk::tkProgressBar("Applying UMAP algorithm with various parameters...", "0%", 0, 100, 200)
+  print("Applying UMAP algorithm with various parameters...")
 
   foreach::foreach(a = 1:length(nNeighborsToTest)) %do%
   {
@@ -92,10 +92,8 @@ determineOptimalUMAPParameters = function(data = NULL, nNeighborsToTest = NULL, 
       plotsList[[length(plotsList) + 1]] = cowplot::as_grob(currentPlot)
     }
 
-    tcltk::setTkProgressBar(pb, round(a/length(nNeighborsToTest) * 100, 0), label = paste("Done: ", round(a/length(nNeighborsToTest) * 100, 0), "%", sep = ""))
+    print(paste("Done: ", round(a/length(nNeighborsToTest) * 100, 0), "%", sep = ""))
   }
-
-  close(pb)
 
   outputPlots = cowplot::plot_grid(plotlist = plotsList, ncol = length(minDistToTest), nrow = length(nNeighborsToTest))
 
@@ -179,7 +177,8 @@ UMAPFlowset = function(data = NULL, model = NULL, chunksMaxSize = 1e+06, n_threa
   }
 
   dataNotSampled_UMAPIndexes_list = list()
-  pb = tcltk::tkProgressBar("Applying previous UMAP model to not sampled data...", "0%", 0, 100, 200)
+
+  print("Applying previous UMAP model to not sampled data...")
 
   foreach::foreach(b = 1:length(chunksLimits)) %do%
   {
@@ -195,10 +194,8 @@ UMAPFlowset = function(data = NULL, model = NULL, chunksMaxSize = 1e+06, n_threa
     rm(currentChunk_dataNotSampled_umap_out)
     gc()
 
-    tcltk::setTkProgressBar(pb, round(b/length(chunksLimits) * 100, 0), label = paste("Done: ", round(b/length(chunksLimits) * 100, 0), "%", sep = ""))
+    paste("Done: ", round(b/length(chunksLimits) * 100, 0), "%", sep = "")
   }
-
-  close(pb)
 
   dataNotSampled_UMAPIndexes_list = do.call(rbind.data.frame, dataNotSampled_UMAPIndexes_list)
   data$UMAP_1 = dataNotSampled_UMAPIndexes_list[, 1]
