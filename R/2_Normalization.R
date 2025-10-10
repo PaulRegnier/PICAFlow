@@ -1400,6 +1400,7 @@ gau = function(d, s, m)
 #' This function allows to manually fine tune the pre-determined peaks for each sample and parameter using a dedicated Shiny application.
 #'
 #' @importFrom foreach %do%
+#' @import flowCore
 #'
 #' @export
 
