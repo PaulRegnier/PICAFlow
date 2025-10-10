@@ -2032,7 +2032,7 @@ fineTunePeaks = function()
             xintercept = current_x[[pos_key]],
             color = peak_colors[i],
             linetype = peak_lineTypes[i],
-            size = 1.2
+            linewidth = 1.2
           )
         }
       }
