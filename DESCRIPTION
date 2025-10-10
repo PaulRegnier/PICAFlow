@@ -1,6 +1,6 @@
 Package: PICAFlow
 Title: PICAFlow: a complete R workflow dedicated to flow/mass cytometry data, from data pre-processing to deep and comprehensive analysis
-Version: 1.1.0
+Version: 1.2.0
 Authors@R: 
     person("Paul", "Régnier", , "paul.regnier@aphp.fr", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-9713-1132"))
@@ -8,7 +8,7 @@ Description: PICAFlow (Pipeline for Integrative and Comprehensive Analysis of Fl
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Imports:
   parallel,
   doSNOW,

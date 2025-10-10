@@ -1394,3 +1394,737 @@ gau = function(d, s, m)
 {
   return(2.7182^(-((d - m)^2)/(2 * s * s)))
 }
+
+#' Manually fine tune peaks
+#'
+#' This function allows to manually fine tune the pre-determined peaks for each sample and parameter using a dedicated Shiny application.
+#'
+#' @importFrom foreach %do%
+#'
+#' @export
+
+fineTunePeaks = function()
+{
+  peaks = NULL
+  p = NULL
+  x = NULL
+  y = NULL
+
+  # RDS file to store the whole peaks information
+
+  RDS_filePath = file.path("output", "2_Normalization", "ShinyApp_TunePeaks.rds")
+
+  # Helper function for null-coalescing
+
+  `%||%` = function(a, b) if (is.null(a) || is.na(a)) b else a
+
+  # Creating the persistent data structure to store peak information
+
+  firstParameterData = readRDS(file.path("rds", list.files("rds", pattern = "*.rds")[1]))
+  totalSampleNames = firstParameterData@phenoData@data$name
+  parametersList = list.files(file.path("output", "2_Normalization", "peaks"), pattern = "*.txt")
+
+  totalPeaksValues = vector(mode = "list", length = length(totalSampleNames))
+  names(totalPeaksValues) = totalSampleNames
+
+  foreach::foreach(sample = 1:length(totalSampleNames)) %do%
+    {
+      currentSample = totalSampleNames[sample]
+
+      currentSample_parametersList = vector(mode = "list", length = length(parametersList))
+      names(currentSample_parametersList) = parametersList
+
+      foreach::foreach(p = 1:length(parametersList)) %do%
+        {
+          currentParameterID = grep(paste("Parameter-", p, "_", sep = ""), parametersList)
+          currentParameterName = parametersList[currentParameterID]
+
+          peaksData = utils::read.csv(file = file.path("output", "2_Normalization", "peaks", parametersList[currentParameterID]), sep = "\t")
+          associatedPeaksInfos = peaksData[peaksData$Samples == currentSample, ]
+          associatedPeaksInfos = as.numeric(associatedPeaksInfos[1, -1])
+
+          peaksList = vector(mode = "list", length = 6)
+          foreach::foreach(peaks = 1:3) %do%
+            {
+              if(peaks <= length(associatedPeaksInfos))
+              {
+                peaksList[[peaks]] = associatedPeaksInfos[peaks]
+                peaksList[[peaks + 3]] = FALSE
+              } else
+              {
+                peaksList[[peaks]] = 0
+                peaksList[[peaks + 3]] = TRUE
+              }
+
+              names(peaksList)[peaks] = paste("x", peaks, sep = "")
+              names(peaksList)[peaks + 3] = paste("c", peaks, sep = "")
+            }
+
+          peaksList = append(list(num_peaks = length(associatedPeaksInfos)), peaksList)
+
+          currentSample_parametersList[[currentParameterName]] = peaksList
+        }
+      totalPeaksValues[[currentSample]] = currentSample_parametersList
+    }
+
+
+  namedListParameters = as.list(names(totalPeaksValues[[1]]))
+  names(namedListParameters) = gsub("^peaksAnalysis_Parameter-([0-9]+)_(.+)\\.txt$", "Parameter-\\1 (\\2)", names(totalPeaksValues[[1]]))
+
+  associatedIDs = as.numeric(gsub("^peaksAnalysis_Parameter-([0-9]+)_(.+)\\.txt$", "\\1", names(totalPeaksValues[[1]])))
+
+  namedListParameters = namedListParameters[order(associatedIDs)]
+
+  # Save data
+
+  save_positions_data = function(data, file_path) {
+
+    saveRDS(data, file_path)
+
+  }
+
+  # Shiny app: UI section
+
+  ui = shiny::fluidPage(
+
+    shiny::titlePanel("Peaks fine editor"),
+
+    shiny::sidebarLayout(
+      shiny::sidebarPanel(
+
+        shiny::h4(shiny::strong("Samples")),
+
+        shiny::fluidRow(
+          shiny::column(6, shiny::actionButton("prev_sample", "< Previous", width = '100%')),
+          shiny::column(6, shiny::actionButton("next_sample", "Next >", width = '100%'))
+        ),
+        shiny::br(),
+
+        shiny::selectInput("sample_choice",
+                           label = NULL,
+                           choices = totalSampleNames,
+                           selected = totalSampleNames[1]),
+
+        shiny::hr(),
+
+        shiny::h4(shiny::strong("Parameters")),
+
+        shiny::fluidRow(
+          shiny::column(6, shiny::actionButton("prev_parameter", "< Previous", width = '100%')),
+          shiny::column(6, shiny::actionButton("next_parameter", "Next >", width = '100%'))
+        ),
+
+        shiny::br(),
+
+        shiny::selectInput("parameter_choice",
+                           label = NULL,
+                           choices = namedListParameters,
+                           selected = namedListParameters[1]),
+
+        shiny::hr(),
+
+        shiny::h4(shiny::strong("Number of peaks")),
+        shiny::verbatimTextOutput("num_peaks_display"),
+
+        shiny::hr(),
+
+        shiny::h4(shiny::strong("Peaks tuning")),
+
+        shiny::uiOutput("peak_controls"),
+
+        shiny::h4(shiny::strong("Current position of peaks")),
+        shiny::verbatimTextOutput("positions_x"),
+      ),
+
+      shiny::mainPanel(
+        shiny::plotOutput("density_plot", width = "100%")
+      )
+    )
+  )
+
+
+  # Shiny app: server section
+
+  server = function(input, output, session) {
+
+    # -----------------------------------------------------------
+    # 1. INITIALIZING PERSISTENT DATA
+    # -----------------------------------------------------------
+
+    # We create a reactive app_data object based on totalPeaksValues
+
+    app_data = shiny::reactiveValues()
+    for (name in totalSampleNames) {
+      app_data[[name]] = totalPeaksValues[[name]]
+    }
+
+    # Initially displayed sample and parameter are the first available ones
+
+    initial_sample_name = totalSampleNames[1]
+    initial_parameter_name = names(totalPeaksValues[[1]])[1]
+
+    # We grab the associated peaks and checkboxes values from the totalPeaksValues
+
+    initial_x1 = totalPeaksValues[[initial_sample_name]][[initial_parameter_name]]$x1
+    initial_x2 = totalPeaksValues[[initial_sample_name]][[initial_parameter_name]]$x2
+    initial_x3 = totalPeaksValues[[initial_sample_name]][[initial_parameter_name]]$x3
+
+    initial_c1 = totalPeaksValues[[initial_sample_name]][[initial_parameter_name]]$c1
+    initial_c2 = totalPeaksValues[[initial_sample_name]][[initial_parameter_name]]$c2
+    initial_c3 = totalPeaksValues[[initial_sample_name]][[initial_parameter_name]]$c3
+
+    # QC of initial peaks values (set them to their actual values if they are ok, otherwise set them to 0)
+
+    init_x1_val = if(length(initial_x1) == 1 && !is.na(initial_x1)) initial_x1 else 0
+    init_x2_val = if(length(initial_x2) == 1 && !is.na(initial_x2)) initial_x2 else 0
+    init_x3_val = if(length(initial_x3) == 1 && !is.na(initial_x3)) initial_x3 else 0
+
+    # Updating peaks values displaying if the checkboxes are checked or not
+
+    current_x = shiny::reactiveValues(
+      x1 = if(initial_c1) NA_real_ else init_x1_val,
+      x2 = if(initial_c2) NA_real_ else init_x2_val,
+      x3 = if(initial_c3) NA_real_ else init_x3_val
+    )
+
+    # QC of initial checkboxes values (set them to their actual values if they are ok, otherwise set them to FALSE)
+
+    current_c = shiny::reactiveValues(
+      c1 = if(length(initial_c1) == 1 && !is.na(initial_c1)) initial_c1 else FALSE,
+      c2 = if(length(initial_c2) == 1 && !is.na(initial_c2)) initial_c2 else FALSE,
+      c3 = if(length(initial_c3) == 1 && !is.na(initial_c3)) initial_c3 else FALSE
+    )
+
+    # Store the last value from slider to put it back afterwards
+
+    last_valid_x = shiny::reactiveValues(
+      x1 = init_x1_val,
+      x2 = init_x2_val,
+      x3 = init_x3_val
+    )
+
+    # Reactive variables which store the inital number of peaks
+
+    initial_num_peaks = totalPeaksValues[[initial_sample_name]][[initial_parameter_name]]$num_peaks
+    initial_num_peaks_val = max(1, min(3, as.integer(initial_num_peaks %||% 1)))
+
+    num_peaks_r = shiny::reactiveVal(initial_num_peaks_val)
+    prev_num_peaks = shiny::reactiveVal(initial_num_peaks_val)
+
+    # Reactive variables to store the min/max limits of the sliders
+    slider_min = shiny::reactiveVal(0)
+    slider_max = shiny::reactiveVal(1)
+
+    # Colors and styles of displayed peak lines
+
+    peak_colors = c("red", "blue", "darkgreen")
+    peak_lineTypes = c("dashed", "dashed", "dashed")
+
+    # -----------------------------------------------------------
+    # 2. AUTOMATIC SAVE LOGIC
+    # -----------------------------------------------------------
+
+    shiny::observe({
+      dummy_trigger = shiny::reactiveValuesToList(app_data)
+      shiny::isolate({
+        save_positions_data(dummy_trigger, RDS_filePath)
+      })
+    })
+
+    # -----------------------------------------------------------
+    # 3. LOGIC TO MANAGE THE NUMBER OF PEAKS
+    # -----------------------------------------------------------
+
+    # Observe any modification of num_peaks_r variable
+
+    shiny::observeEvent(num_peaks_r(), {
+      shiny::req(input$sample_choice, input$parameter_choice)
+      new_n = num_peaks_r()
+      old_n = prev_num_peaks()
+
+      sample = input$sample_choice
+      parameter = input$parameter_choice
+
+      # Save the new number of peaks in app_data
+
+      app_data[[sample]][[parameter]]$num_peaks = new_n
+
+      # Deletion logic
+
+      if (new_n < old_n) {
+        for (i in (new_n + 1):old_n) {
+          pos_key = paste0("x", i)
+          check_key = paste0("c", i)
+
+          app_data[[sample]][[parameter]][[pos_key]] = NULL
+          app_data[[sample]][[parameter]][[check_key]] = NULL
+
+          current_x[[pos_key]] = 0
+          current_c[[check_key]] = FALSE
+          last_valid_x[[pos_key]] = 0
+        }
+      }
+
+      # Update the previous value for the next call
+
+      prev_num_peaks(new_n)
+    }, ignoreInit = TRUE)
+
+
+    # -----------------------------------------------------------
+    # 4. LOADING LOGIC (CHANGING SAMPLE OR PARAMETER)
+    # -----------------------------------------------------------
+
+    # Getting the desired peak value
+
+    get_pos = function(key, sample, parameter) {
+      val = app_data[[sample]][[parameter]][[key]]
+      if (is.null(val)) {
+        val = totalPeaksValues[[sample]][[parameter]][[key]]
+      }
+      if (length(val) != 1 || !is.numeric(val)) {
+        return(0)
+      }
+      return(val)
+    }
+
+    # Getting the desired checkbox value
+
+    get_check = function(key, sample, parameter) {
+      val = app_data[[sample]][[parameter]][[key]]
+      if (is.null(val)) {
+        val = totalPeaksValues[[sample]][[parameter]][[key]]
+      }
+      if (length(val) != 1 || !is.logical(val)) {
+        return(FALSE)
+      }
+      return(val)
+    }
+
+    # Observer which triggers when the sample or the peak changes
+
+    shiny::observeEvent({
+      input$sample_choice
+      input$parameter_choice
+    }, {
+      shiny::req(input$sample_choice, input$parameter_choice)
+
+      sample = input$sample_choice
+      parameter = input$parameter_choice
+
+      # Computing density to get the limits
+
+      currentDensity = current_density_function()
+      new_min_x = min(currentDensity$x)
+      new_max_x = max(currentDensity$x)
+
+      if (new_min_x == new_max_x) {
+        new_min_x = new_min_x - 1
+        new_max_x = new_max_x + 1
+      }
+
+      new_min_x = floor(new_min_x)
+      new_max_x = ceiling(new_max_x)
+
+      # Update the reactive variables for limits
+
+      slider_min(new_min_x)
+      slider_max(new_max_x)
+
+      # Get the number of peaks
+
+      current_n = app_data[[sample]][[parameter]]$num_peaks %||% 1
+      current_n = max(1, min(3, as.integer(current_n)))
+
+      # Update the reactive variable
+
+      num_peaks_r(current_n)
+
+      # Update prev_num_peaks
+
+      shiny::isolate({
+        prev_num_peaks(current_n)
+      })
+
+      # Get peaks values and checkboxes states (+ some QC)
+
+      current_c$c1 = get_check("c1", sample, parameter)
+      current_c$c2 = get_check("c2", sample, parameter)
+      current_c$c3 = get_check("c3", sample, parameter)
+
+      x1_val = get_pos("x1", sample, parameter)
+      x2_val = get_pos("x2", sample, parameter)
+      x3_val = get_pos("x3", sample, parameter)
+
+      last_valid_x$x1 = if(is.na(x1_val)) last_valid_x$x1 else x1_val
+      last_valid_x$x2 = if(is.na(x2_val)) last_valid_x$x2 else x2_val
+      last_valid_x$x3 = if(is.na(x3_val)) last_valid_x$x3 else x3_val
+
+      current_x$x1 = if(current_c$c1) NA_real_ else x1_val
+      current_x$x2 = if(current_c$c2) NA_real_ else x2_val
+      current_x$x3 = if(current_c$c3) NA_real_ else x3_val
+
+      # Update limits and input controls
+
+      n = current_n
+
+      shiny::isolate({
+        for (i in 1:3) {
+          pos_key = paste0("x", i)
+          check_key = paste0("c", i)
+
+          slider_val = last_valid_x[[pos_key]]
+
+          if (slider_val < new_min_x || slider_val > new_max_x) {
+            slider_val = (new_min_x + new_max_x) / 2
+          }
+
+          shiny::updateSliderInput(session,
+                                   paste0(pos_key, "_slider"),
+                                   value = slider_val,
+                                   min = new_min_x,
+                                   max = new_max_x)
+
+          shiny::updateCheckboxInput(session,
+                                     paste0(check_key, "_checkbox"),
+                                     value = current_c[[check_key]])
+        }
+      })
+    }, ignoreInit = FALSE)
+
+    # Observers for previous/next buttons
+
+    parameter_choices_vec = names(totalPeaksValues[[1]])
+
+    shiny::observeEvent(input$next_parameter, {
+      current_index = match(input$parameter_choice, parameter_choices_vec)
+      new_index = if (current_index == length(parameter_choices_vec)) 1 else current_index + 1
+      shiny::updateSelectInput(session, "parameter_choice", selected = parameter_choices_vec[new_index])
+    })
+
+    shiny::observeEvent(input$prev_parameter, {
+      current_index = match(input$parameter_choice, parameter_choices_vec)
+      new_index = if (current_index == 1) length(parameter_choices_vec) else current_index - 1
+      shiny::updateSelectInput(session, "parameter_choice", selected = parameter_choices_vec[new_index])
+    })
+
+    sample_choices_vec = totalSampleNames
+
+    shiny::observeEvent(input$next_sample, {
+      current_index = match(input$sample_choice, sample_choices_vec)
+      new_index = if (current_index == length(sample_choices_vec)) 1 else current_index + 1
+      shiny::updateSelectInput(session, "sample_choice", selected = sample_choices_vec[new_index])
+    })
+
+    shiny::observeEvent(input$prev_sample, {
+      current_index = match(input$sample_choice, sample_choices_vec)
+      new_index = if (current_index == 1) length(sample_choices_vec) else current_index - 1
+      shiny::updateSelectInput(session, "sample_choice", selected = sample_choices_vec[new_index])
+    })
+
+    # -----------------------------------------------------------
+    # 5. DYNAMIC RENDERING OF UI CONTROLS
+    # -----------------------------------------------------------
+
+    # Rendering the non-editable number of peaks value
+
+    output$num_peaks_display = shiny::renderText({
+      return(num_peaks_r())
+    })
+
+    # Rendering the dynamic UI
+
+    output$peak_controls = shiny::renderUI({
+
+      shiny::req(num_peaks_r())
+      n = num_peaks_r()
+
+      min_x = slider_min()
+      max_x = slider_max()
+
+      control_list = lapply(1:n, function(i) {
+        pos_key = paste0("x", i)
+        check_key = paste0("c", i)
+
+        initial_check_value = FALSE
+        initial_slider_value = (min_x + max_x) / 2
+
+        shiny::tagList(
+          shiny::h4(shiny::span(paste("Peak ", i), style = paste0("color: ", peak_colors[i], ";"))),
+
+          shiny::checkboxInput(paste0(check_key, "_checkbox"),
+                               label = "Unset (set to NA)",
+                               value = initial_check_value),
+
+          shiny::sliderInput(paste0(pos_key, "_slider"),
+                             paste0("Peak x position:"),
+                             min = min_x, max = max_x,
+                             value = initial_slider_value, step = 0.01),
+          shiny::hr()
+        )
+      })
+
+      do.call(shiny::tagList, control_list)
+    })
+
+    # Observer to deactivate the slider if necessary
+
+    shiny::observe({
+      shiny::req(num_peaks_r())
+      for (i in 1:num_peaks_r()) {
+        check_key = paste0("c", i)
+        pos_key = paste0("x", i, "_slider")
+
+        is_disabled = shiny::isolate(current_c[[check_key]])
+
+        session$sendInputMessage(pos_key, list(disabled = is_disabled))
+      }
+    })
+
+    # -----------------------------------------------------------
+    # 6. SYNCHRONISATION : WRITING IN THE PERSISTENT DATA STRUCTURE
+    # -----------------------------------------------------------
+
+    update_peak_data = function(index) {
+
+      shiny::req(num_peaks_r() >= index)
+      pos_key = paste0("x", index)
+      check_key = paste0("c", index)
+      slider_key = paste0(pos_key, "_slider")
+      check_box_key = paste0(check_key, "_checkbox")
+
+      sample = input$sample_choice
+      parameter = input$parameter_choice
+
+      is_checked = input[[check_box_key]]
+
+      # Update of the checkbox state
+
+      app_data[[sample]][[parameter]][[check_key]] = is_checked
+      current_c[[check_key]] = is_checked
+
+      shiny::isolate({
+        # Update the peak x value
+
+        if (is_checked) {
+          app_data[[sample]][[parameter]][[pos_key]] = NA_real_
+          current_x[[pos_key]] = NA_real_
+        } else {
+          val = shiny::isolate(input[[slider_key]])
+
+          app_data[[sample]][[parameter]][[pos_key]] = val
+          current_x[[pos_key]] = val
+          last_valid_x[[pos_key]] = val
+        }
+      })
+    }
+
+    # Observer for each slider and checkbox
+
+    shiny::observeEvent(input$x1_slider, update_peak_data(1), ignoreInit = TRUE)
+    shiny::observeEvent(input$c1_checkbox, update_peak_data(1), ignoreInit = TRUE)
+    shiny::observeEvent(input$x2_slider, update_peak_data(2), ignoreInit = TRUE)
+    shiny::observeEvent(input$c2_checkbox, update_peak_data(2), ignoreInit = TRUE)
+    shiny::observeEvent(input$x3_slider, update_peak_data(3), ignoreInit = TRUE)
+    shiny::observeEvent(input$c3_checkbox, update_peak_data(3), ignoreInit = TRUE)
+
+    # -----------------------------------------------------------
+    # 7. DENSITY FUNCITONS AND RENDERING
+    # -----------------------------------------------------------
+
+    current_density_function = shiny::reactive({
+
+      sample_name = input$sample_choice
+      parameter_name = input$parameter_choice
+
+      shiny::req(sample_name, parameter_name)
+
+      parameterName = gsub("^(.+)_(.+)_(.+)$", "\\3", parameter_name)
+      parameterName = gsub("\\.txt", "", parameterName)
+
+      RDSFilesList = list.files("rds", pattern = "*.rds")
+      RDSFileToOpenID = grep(paste("(.+)_", parameterName, "_(.+)$", sep = ""), RDSFilesList)
+
+      if(length(RDSFileToOpenID) == 0) {
+        return(list(x = c(-1, 1), y = c(0, 0)))
+      }
+
+      RDSFile = readRDS(file.path("rds", RDSFilesList[RDSFileToOpenID]))
+
+      # Use of isolated local values
+
+      patientData = RDSFile[RDSFile@phenoData@data$name == sample_name, ]
+
+      if(length(patientData) == 0 || nrow(patientData[[1]]@exprs) == 0) {
+        return(list(x = c(-1, 1), y = c(0, 0)))
+      }
+
+      data_for_density = as.numeric(patientData[[1]]@exprs[, 1])
+
+      if(length(data_for_density) < 2) {
+        return(list(x = c(min(data_for_density)-1, max(data_for_density)+1), y = c(0, 0)))
+      }
+
+      density = density(data_for_density)
+
+      outputValues = list(x = density$x, y = density$y)
+      return(outputValues)
+    })
+
+    # Displaying peaks x positions
+
+    output$positions_x = shiny::renderText({
+      shiny::req(num_peaks_r())
+      n = num_peaks_r()
+
+      text_output = ""
+      for (i in 1:n) {
+        pos_key = paste0("x", i)
+
+        val = current_x[[pos_key]]
+        display_val = if (is.na(val)) "NA (unset)" else format(val, digits = 4)
+
+        text_output = paste0(text_output,
+                             paste0("Peak ", i, " (", peak_colors[i], "): x = ", display_val, "\n"))
+      }
+      return(text_output)
+    })
+
+    # Rendering density graph
+
+    output$density_plot = shiny::renderPlot({
+
+      shiny::req(num_peaks_r(), input$sample_choice, input$parameter_choice)
+
+      currentDensity = current_density_function()
+
+      data_density = data.frame(
+        x = currentDensity$x,
+        y = currentDensity$y
+      )
+
+      plot_title = NULL
+
+      x_min = floor(min(data_density$x))
+      x_max = ceiling(max(data_density$x))
+      y_max = ceiling(max(data_density$y) * 1.05)
+
+      p = ggplot2::ggplot(data_density, ggplot2::aes(x = x, y = y)) +
+        ggplot2::geom_line(color = "blue", linewidth = 1) +
+        ggplot2::geom_area(fill = "lightblue", alpha = 0.5) +
+        ggplot2::labs(title = plot_title,
+             x = "Fluorescence intensity (x)", y = "Density (y)") +
+        ggplot2::theme_minimal() +
+        ggplot2::coord_cartesian(xlim = c(x_min, x_max),
+                        ylim = c(0, max(y_max, 0.1)))
+
+      n = num_peaks_r()
+
+      for (i in 1:n) {
+        pos_key = paste0("x", i)
+
+        if (!is.na(current_x[[pos_key]])) {
+          p = p + ggplot2::geom_vline(
+            xintercept = current_x[[pos_key]],
+            color = peak_colors[i],
+            linetype = peak_lineTypes[i],
+            size = 1.2
+          )
+        }
+      }
+
+      print(p)
+
+
+    },
+
+    # Defining the height of the graph as its current width
+
+    height = function() {
+      session$clientData$output_density_plot_width
+    })
+  }
+
+  # Launch the Shiny app
+
+  shiny::shinyApp(ui = ui, server = server)
+
+}
+
+#' Reexport peak tabular text files from RDS peaks data structure
+#'
+#' This function allows to reexport all the tabular text files containing all the corrected peaks for every parameter and sample after peaks have been corrected through the dedicatedShiny application.
+#'
+#' @importFrom foreach %do%
+#'
+#' @export
+
+exportRDSPeaksDataToTabularTextFiles = function()
+{
+  sample = NULL
+  parameter = NULL
+  peak = NULL
+
+  RDSDataToExport = readRDS(file = file.path("output", "2_Normalization", "ShinyApp_TunePeaks.rds"))
+
+  formattedData = data.frame()
+
+  foreach::foreach(sample = 1:length(RDSDataToExport)) %do%
+    {
+      currentSampleData = RDSDataToExport[[sample]]
+      currentSampleName = names(RDSDataToExport)[sample]
+
+      foreach::foreach(parameter = 1:length(currentSampleData)) %do%
+        {
+          currentParameterData = currentSampleData[[parameter]]
+          currentParameterName = names(currentSampleData)[parameter]
+
+          nbOfPeaks = as.numeric(currentParameterData$num_peaks)
+
+          formattedData = rbind(formattedData, c(currentSampleName, currentParameterName, nbOfPeaks, currentParameterData[[2]], currentParameterData[[3]], currentParameterData[[4]]))
+
+        }
+
+    }
+
+  colnames(formattedData) = c("Samples", "Parameter", "NbOfPeaks", "Peak1", "Peak2", "Peak3")
+
+  uniqueParameters = unique(formattedData$Parameter)
+  uniqueSamples = unique(formattedData$Sample)
+
+  foreach::foreach(parameter = 1:length(uniqueParameters)) %do%
+    {
+      currentParameter = uniqueParameters[parameter]
+      currentParameterData = data.frame()
+
+      foreach::foreach(sample = 1:length(uniqueSamples)) %do%
+        {
+          currentSample = uniqueSamples[sample]
+
+          currentData = formattedData[formattedData$Sample == currentSample & formattedData$Parameter == currentParameter, ]
+
+          currentParameterData = rbind(currentParameterData, currentData)
+
+        }
+
+      currentParameter_peaksNb = as.numeric(unique(currentParameterData$NbOfPeaks))
+
+      currentParameter_peaksColumnsToKeep = NULL
+
+      foreach::foreach(peak = 1:currentParameter_peaksNb) %do%
+        {
+          currentParameter_peaksColumnsToKeep = c(currentParameter_peaksColumnsToKeep, paste("Peak", peak, sep = ""))
+
+        }
+
+      dataFrameToModify = as.data.frame(currentParameterData[, currentParameter_peaksColumnsToKeep])
+      colnames(dataFrameToModify) = currentParameter_peaksColumnsToKeep
+
+      currentParameterData[, currentParameter_peaksColumnsToKeep] = apply(dataFrameToModify, 2, as.numeric)
+
+      currentParameterData = currentParameterData[, colnames(currentParameterData) %in% c("Samples", currentParameter_peaksColumnsToKeep)]
+
+      utils::write.table(currentParameterData, file = file.path("output", "2_Normalization", "peaks", currentParameter), sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
+
+    }
+}
