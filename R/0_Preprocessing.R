@@ -13,10 +13,10 @@ checkNewVersion = function(...)
 
   if(installedRelease != latestRelease)
   {
-    print(paste("[WARNING] The version of PICAFlow which is currently installed on this computer ('", installedRelease, "') does not match with the latest version available on GitHub ('", latestRelease, "'). We kindly invite you to update to the latest version to avoid any troubles related to bugs and/or missing features. You can launch the update with the following command: 'devtools::install_github('PaulRegnier/PICAFlow', force = TRUE)'. Please see the tutorial for more information. Thank you for your understanding.", sep = ""))
+    packageStartupMessage(paste("[WARNING] The version of PICAFlow which is currently installed on this computer ('", installedRelease, "') does not match with the latest version available on GitHub ('", latestRelease, "'). We kindly invite you to update to the latest version to avoid any troubles related to bugs and/or missing features. You can launch the update with the following command: 'devtools::install_github('PaulRegnier/PICAFlow', force = TRUE)'. Please see the tutorial for more information. Thank you for your understanding.", sep = ""))
   } else
   {
-    print(paste("[NOTE] The version of PICAFlow which is currently installed on this computer (", installedRelease, ") is up-to-date.", sep = ""))
+    packageStartupMessage(paste("[NOTE] The version of PICAFlow which is currently installed on this computer (", installedRelease, ") is up-to-date.", sep = ""))
   }
 }
 
@@ -133,7 +133,7 @@ convertToRDS = function(conversionTable = NULL)
 
         isCompensationMatricesPresent = try(flowStats::spillover(currentData), silent = TRUE)
 
-        if(class(isCompensationMatricesPresent) != "try-error")
+        if(inherits(isCompensationMatricesPresent, "try-error") == FALSE)
         {
           compensationMatricesSlot = as.numeric(which(lengths(flowStats::spillover(currentData)) > 0))
           compensationMatricesSlotName = names(flowStats::spillover(currentData))[compensationMatricesSlot]
@@ -419,7 +419,7 @@ subsetData = function(parametersToKeep = NULL, customNames = NULL)
 
   currentDataCompensationExists = try(flowStats::spillover(currentData), silent = TRUE)
 
-  if((class(currentDataCompensationExists) == "try-error") == FALSE)
+  if(inherits(currentDataCompensationExists, "try-error") == FALSE)
   {
 
     compensationMatricesSlot = as.numeric(which(lengths(flowStats::spillover(currentData)) > 0))
