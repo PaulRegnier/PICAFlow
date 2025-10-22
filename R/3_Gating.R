@@ -1,3 +1,27 @@
+#' Get 2nd and 99th percentiles from parameter distribution
+#'
+#' This function allows to extract the 2nd and 99th percentiles for any given parameter distribution contained in the dataset.
+#'
+#' @param flowset A string defining the `flowSet` to use. Defaults to `NULL`.
+#'
+#' @param sample A numeric vector defining which sample should be used to get the limits. Defaults to `1`.
+#'
+#' @param parameter A string defining which parameter to extract limits from. Defaults to `NULL`.
+#'
+#' @return A vector of length 2 containing the 2nd and 99th percentiles, in the first and second position, respectively.
+#'
+#' @export
+
+getParameterLimits = function(flowset = NULL, sample = 1, parameter = NULL)
+{
+  limits = c(
+    round(as.numeric(quantile(flowset[[sample]]@exprs[, parameter], probs = seq(0, 1, 0.01))[2])),
+    round(as.numeric(quantile(flowset[[sample]]@exprs[, parameter], probs = seq(0, 1, 0.01))[100]))
+  )
+
+  return(limits)
+}
+
 #' Gate on cells of interest
 #'
 #' This function allows to gate on cells of interest.
