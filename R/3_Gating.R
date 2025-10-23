@@ -15,8 +15,8 @@
 getParameterLimits = function(flowset = NULL, sample = 1, parameter = NULL)
 {
   limits = c(
-    round(as.numeric(quantile(flowset[[sample]]@exprs[, parameter], probs = seq(0, 1, 0.01))[2])),
-    round(as.numeric(quantile(flowset[[sample]]@exprs[, parameter], probs = seq(0, 1, 0.01))[100]))
+    round(as.numeric(stats::quantile(flowset[[sample]]@exprs[, parameter], probs = seq(0, 1, 0.01))[2])),
+    round(as.numeric(stats::quantile(flowset[[sample]]@exprs[, parameter], probs = seq(0, 1, 0.01))[100]))
   )
 
   return(limits)
