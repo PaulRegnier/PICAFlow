@@ -1456,7 +1456,7 @@ fineTunePeaks = function()
                 peaksList[[peaks + 3]] = FALSE
               } else
               {
-                peaksList[[peaks]] = 0
+                peaksList[[peaks]] = NA
                 peaksList[[peaks + 3]] = TRUE
               }
 
@@ -1686,8 +1686,8 @@ fineTunePeaks = function()
       if (is.null(val)) {
         val = totalPeaksValues[[sample]][[parameter]][[key]]
       }
-      if (length(val) != 1 || !is.numeric(val)) {
-        return(0)
+	  if (length(val) != 1 || is.na(val)) {
+        return(NA)
       }
       return(val)
     }
@@ -1699,8 +1699,8 @@ fineTunePeaks = function()
       if (is.null(val)) {
         val = totalPeaksValues[[sample]][[parameter]][[key]]
       }
-      if (length(val) != 1 || !is.logical(val)) {
-        return(FALSE)
+      if (length(val) != 1 || is.na(val)) {
+        return(TRUE)
       }
       return(val)
     }
@@ -1752,13 +1752,33 @@ fineTunePeaks = function()
 
       # Get peaks values and checkboxes states (+ some QC)
 
-      current_c$c1 = get_check("c1", sample, parameter)
-      current_c$c2 = get_check("c2", sample, parameter)
-      current_c$c3 = get_check("c3", sample, parameter)
-
       x1_val = get_pos("x1", sample, parameter)
       x2_val = get_pos("x2", sample, parameter)
       x3_val = get_pos("x3", sample, parameter)
+	  
+	  if(is.na(x1_val))
+	  {
+		current_c$c1 = TRUE
+	  } else
+	  {
+		current_c$c1 = get_check("c1", sample, parameter)
+	  }
+	  
+	  if(is.na(x2_val))
+	  {
+		current_c$c2 = TRUE
+	  } else
+	  {
+		current_c$c2 = get_check("c2", sample, parameter)
+	  }
+	  
+	  if(is.na(x3_val))
+	  {
+		current_c$c3 = TRUE
+	  } else
+	  {
+		current_c$c3 = get_check("c3", sample, parameter)
+	  }
 
       last_valid_x$x1 = if(is.na(x1_val)) last_valid_x$x1 else x1_val
       last_valid_x$x2 = if(is.na(x2_val)) last_valid_x$x2 else x2_val

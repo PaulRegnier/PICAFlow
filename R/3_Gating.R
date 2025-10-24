@@ -677,7 +677,7 @@ shinyAppGating = function(flowset = NULL, sample = 1, param_x = NULL, param_y = 
       if (poly_coords$closed) {
         "Status: closed (polygone complete)"
       } else if (length(poly_coords$x) >= 1) {
-        paste0("Status : open (", length(poly_coords$x), " vertices)")
+        paste0("Status: open (", length(poly_coords$x), " vertices)")
       } else {
         "Statut: inactive"
       }
