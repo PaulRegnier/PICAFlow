@@ -376,8 +376,7 @@ shinyAppGating = function(flowset = NULL, sample = 1, param_x = NULL, param_y = 
 
         # Slider to tune bin width
 
-        shiny::sliderInput("bin_width", "Bin size",
-                    min = 1, max = 10000, value = bins, step = 1),
+        shiny::numericInput("bin_width", "Bin size:", value = bins),
 
         shiny::hr(),
 
