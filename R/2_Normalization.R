@@ -1471,7 +1471,6 @@ fineTunePeaks = function()
       totalPeaksValues[[currentSample]] = currentSample_parametersList
     }
 
-
   namedListParameters = as.list(names(totalPeaksValues[[1]]))
   names(namedListParameters) = gsub("^peaksAnalysis_Parameter-([0-9]+)_(.+)\\.txt$", "Parameter-\\1 (\\2)", names(totalPeaksValues[[1]]))
 
