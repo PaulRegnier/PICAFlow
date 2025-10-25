@@ -1424,7 +1424,7 @@ fineTunePeaks = function()
 
   # Creating the persistent data structure to store peak information
 
-  firstParameterData = readRDS(file.path("rds", list.files("rds", pattern = "*.rds")[1]))
+  firstParameterData = readRDS(file.path("rds", list.files("rds", pattern = "step1_(.*)_raw.rds")[1]))
   totalSampleNames = firstParameterData@phenoData@data$name
   parametersList = list.files(file.path("output", "2_Normalization", "peaks"), pattern = "*.txt")
 
@@ -1755,7 +1755,7 @@ fineTunePeaks = function()
       x1_val = get_pos("x1", sample, parameter)
       x2_val = get_pos("x2", sample, parameter)
       x3_val = get_pos("x3", sample, parameter)
-	  
+
 	  if(is.na(x1_val))
 	  {
 		current_c$c1 = TRUE
@@ -1763,7 +1763,7 @@ fineTunePeaks = function()
 	  {
 		current_c$c1 = get_check("c1", sample, parameter)
 	  }
-	  
+
 	  if(is.na(x2_val))
 	  {
 		current_c$c2 = TRUE
@@ -1771,7 +1771,7 @@ fineTunePeaks = function()
 	  {
 		current_c$c2 = get_check("c2", sample, parameter)
 	  }
-	  
+
 	  if(is.na(x3_val))
 	  {
 		current_c$c3 = TRUE
