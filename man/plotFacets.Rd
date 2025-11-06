@@ -10,7 +10,8 @@ plotFacets(
   folder = NULL,
   suffix = "_raw",
   downsample_n = 50000,
-  nCoresToExploit = NULL
+  nCoresToExploit = NULL,
+  plotPeaks = FALSE
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ plotFacets(
 \item{downsample_n}{An integer defining the maximum number of cells to use for each plotted sample. Defaults to \code{50000}.}
 
 \item{nCoresToExploit}{An integer defining the number of cores to use to export the graphs. It corresponds to the number of parameters to be treated concomitantly. Defaults to \code{NULL}, which translates to the actual number of cores of the processor minus 1.}
+
+\item{plotPeaks}{A boolean defining if the peaks values found in the corresponding tabular text files should be displayed on each graph (if set to \code{TRUE}) or not (if set to \code{FALSE}).}
 }
 \value{
 Generated plots are saved to \verb{output > 2_Normalization > folder} directory.

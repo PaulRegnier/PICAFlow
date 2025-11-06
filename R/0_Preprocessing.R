@@ -7,8 +7,6 @@
 
 checkNewVersion = function(...)
 {
-  library("gh")
-
   latestRelease = gh::gh("GET /repos/{owner}/{repo}/releases", owner = "PaulRegnier", repo = "PICAFlow")
   latestRelease = as.character(latestRelease[[1]][["tag_name"]])
   installedRelease = as.character(utils::packageVersion("PICAFlow"))

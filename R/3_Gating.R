@@ -58,7 +58,7 @@ getParameterLimits = function(flowset = NULL, sample = 1, parameter = NULL)
 #'
 #' @param generatedGates A named list containing the gates that were generated during the gating process. This value should not be manually provided apart from what is described in the tutorial. Defaults to `NULL`.
 #'
-#' @param customBinWidth A numeric vector defining the width of the bins to use for data plotting after interactive gating. Defaults to `5000`. High values (over `100` or `1000`) are better suited for linear parameters with very broad range (such FSC, SSC, etc.) whereas low values (under `10` or `1`) are better suited for log-transformed parameters with a small range. Defaults to `5000`.
+#' @param customBinWidth A numeric vector defining the width of the bins to use for data plotting during interactive gating (within the Shiny application) and after interactive gating (in the exported PDF files). High values (typically over `100` or `1000`, sometimes higher than that) are better suited for linear parameters with very broad range (such FSC, SSC, etc.) whereas low values (typically under `10` or `1`, sometimes lower than that) are better suited for log-transformed parameters with a small range. We highly recommend to try several values chosen from both ranges to select the one that best fits your dataset. Defaults to `2000`.
 #'
 #' @return If `exportAllPlots = TRUE`, the function will output PDF files containing the gating plots for each sample of the dataset. If `subset = TRUE`, the function will return a list of 2 elements named `flowset` (containing the actual gated `flowSet`) and `summary` (containing basic statistics about the gating such as the number of cells before gating, the number of cells gated and the proportion of cells gated).
 #'
@@ -66,7 +66,7 @@ getParameterLimits = function(flowset = NULL, sample = 1, parameter = NULL)
 #'
 #' @export
 
-gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yParameter = NULL, xlim = NULL, ylim = NULL, subset = FALSE, gateName = NULL, exportAllPlots = FALSE, samplesPerPage = 6, recursivity = FALSE, inverseGating = FALSE, specificGatesSampleIDs = NULL, redrawGate = TRUE, gatingset = NULL, generatedGates = NULL, customBinWidth = 5000)
+gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yParameter = NULL, xlim = NULL, ylim = NULL, subset = FALSE, gateName = NULL, exportAllPlots = FALSE, samplesPerPage = 6, recursivity = FALSE, inverseGating = FALSE, specificGatesSampleIDs = NULL, redrawGate = TRUE, gatingset = NULL, generatedGates = NULL, customBinWidth = 2000)
 {
   a = NULL
   p = NULL
@@ -86,6 +86,11 @@ gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yPar
   {
     xParameter = flowCore::getChannelMarker(flowset[[sampleToPlot]], xParameter)$desc
     yParameter = flowCore::getChannelMarker(flowset[[sampleToPlot]], yParameter)$desc
+  }
+
+  if (!dir.exists(file.path("output", "3_Gating", paste("name=", gateNameOriginal, "_x=", xParameterOriginal, "_y=", yParameterOriginal, sep = ""))))
+  {
+    dir.create(file.path("output", "3_Gating", paste("name=", gateNameOriginal, "_x=", xParameterOriginal, "_y=", yParameterOriginal, sep = "")))
   }
 
   plot = ggcyto::ggcyto(flowset[sampleToPlot], ggplot2::aes(x = !!rlang::sym(xParameter), y = !!rlang::sym(yParameter)))
@@ -132,23 +137,30 @@ gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yPar
 
     shiny::runApp(shinyAppGating(flowset = flowset, sample = 1, param_x = xParameter, param_y = yParameter, gateKind = "globalGate", param_x_minLim = xlim[1], param_x_maxLim = xlim[2], param_y_minLim = ylim[1], param_y_maxLim = ylim[2], bins = customBinWidth))
 
-    globalGate_coordinates = readRDS(file.path("rds", "globalGate_coordinates.rds"))
+    if(file.exists(file.path("rds", "globalGate_coordinates.rds")))
+    {
+      globalGate_coordinates = readRDS(file.path("rds", "globalGate_coordinates.rds"))
 
-    globalGate = flowCore::polygonGate(.gate = globalGate_coordinates, filterId = "defaultPolygonGate")
-
-
-    generatedGates = vector(mode = "list", length = length(flowset))
-
-    foreach::foreach(g = 1:length(flowset)) %do%
-      {
-        generatedGates[[g]] = globalGate
-      }
-
-    names(generatedGates) = Biobase::phenoData(flowset)$name
+      globalGate = flowCore::polygonGate(.gate = globalGate_coordinates, filterId = "defaultPolygonGate")
 
 
+      generatedGates = vector(mode = "list", length = length(flowset))
 
-    flowWorkspace::gs_pop_add(gatingset, generatedGates, parent = "root")
+      foreach::foreach(g = 1:length(flowset)) %do%
+        {
+          generatedGates[[g]] = globalGate
+        }
+
+      names(generatedGates) = Biobase::phenoData(flowset)$name
+
+
+
+      flowWorkspace::gs_pop_add(gatingset, generatedGates, parent = "root")
+    } else
+    {
+      stop("Error: the \"globalGate_coordinates.rds\" file was not found in the \"rds\" folder.")
+
+    }
 
 
   } else
@@ -182,11 +194,22 @@ gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yPar
 
           shiny::runApp(shinyAppGating(flowset = flowset, sample = currentSampleSpecificGate, param_x = xParameter, param_y = yParameter, gateKind = "specialGate", param_x_minLim = xlim[1], param_x_maxLim = xlim[2], param_y_minLim = ylim[1], param_y_maxLim = ylim[2], bins = customBinWidth))
 
-          currentSpecificGate_coordinates = readRDS(file.path("rds", "specialGate_coordinates.rds"))
+          if(file.exists(file.path("rds", "specialGate_coordinates.rds")))
+          {
 
-          currentSpecificGate = flowCore::polygonGate(.gate = currentSpecificGate_coordinates, filterId = "specialGate")
+            currentSpecificGate_coordinates = readRDS(file.path("rds", "specialGate_coordinates.rds"))
 
-          generatedGates[[currentSampleName]] = currentSpecificGate
+            currentSpecificGate = flowCore::polygonGate(.gate = currentSpecificGate_coordinates, filterId = "specialGate")
+
+            generatedGates[[currentSampleName]] = currentSpecificGate
+          } else
+          {
+            stop("Error: the \"specialGate_coordinates.rds\" file was not found in the \"rds\" folder.")
+
+
+          }
+
+
 
         }
 
@@ -292,14 +315,6 @@ gateData = function(flowset = NULL, sampleToPlot = NULL, xParameter = NULL, yPar
     foreach::foreach(q = 1:length(pagesSamplesList)) %do%
       {
         plot = gateData(flowset = flowset, sampleToPlot = seq(pagesSamplesList[[q]][1], pagesSamplesList[[q]][2]), xParameter = xParameterOriginal, yParameter = yParameterOriginal, xlim = xlim, ylim = ylim, exportAllPlots = FALSE, recursivity = TRUE, inverseGating = inverseGating, specificGatesSampleIDs = specificGatesSampleIDs, redrawGate = FALSE, gatingset = gatingset, generatedGates = generatedGates, customBinWidth = customBinWidth, gateName = gateNameOriginal)
-
-        if (dir.exists(file.path("output", "3_Gating", paste("name=", gateNameOriginal, "_x=", xParameterOriginal, "_y=", yParameterOriginal, sep = ""))))
-        {
-          unlink(file.path("output", "3_Gating", paste("name=", gateNameOriginal, "_x=", xParameterOriginal, "_y=", yParameterOriginal, "*.*", sep = "")))
-        } else
-        {
-          dir.create(file.path("output", "3_Gating", paste("name=", gateNameOriginal, "_x=", xParameterOriginal, "_y=", yParameterOriginal, sep = "")))
-        }
 
         ggplot2::ggsave(filename = paste("name=", gateNameOriginal, "_x=", xParameterOriginal, "_y=", yParameterOriginal, "_samples-", pagesSamplesList[[q]][1], "-to-", pagesSamplesList[[q]][2], ".pdf", sep = ""), device = "pdf", path = file.path("output", "3_Gating", paste("name=", gateNameOriginal, "_x=", xParameterOriginal, "_y=", yParameterOriginal, sep = "")), plot = plot, width = 29.7, height = 21, units = "cm")
       }

@@ -13,6 +13,7 @@
 #' @param downsample_n An integer defining the maximum number of cells to use for each plotted sample. Defaults to `50000`.
 #'
 #' @param nCoresToExploit An integer defining the number of cores to use to export the graphs. It corresponds to the number of parameters to be treated concomitantly. Defaults to `NULL`, which translates to the actual number of cores of the processor minus 1.
+#' @param plotPeaks A boolean defining if the peaks values found in the corresponding tabular text files should be displayed on each graph (if set to `TRUE`) or not (if set to `FALSE`).
 #'
 #' @return Generated plots are saved to `output > 2_Normalization > folder` directory.
 #'
@@ -21,7 +22,7 @@
 #'
 #' @export
 
-plotFacets = function(parametersToPlot = NULL, maxSamplesNbPerPage = 10, folder = NULL, suffix = "_raw", downsample_n = 50000, nCoresToExploit = NULL)
+plotFacets = function(parametersToPlot = NULL, maxSamplesNbPerPage = 10, folder = NULL, suffix = "_raw", downsample_n = 50000, nCoresToExploit = NULL, plotPeaks = FALSE)
 {
   p = NULL
   n = NULL
@@ -147,7 +148,7 @@ plotFacets = function(parametersToPlot = NULL, maxSamplesNbPerPage = 10, folder 
 
       plot1 = ggplot2::ggplot(currentParameterTotalDataTemp, ggplot2::aes(currentParameterTotalDataTemp[, 1], fill = name)) + ggplot2::geom_density(alpha = 1, linewidth = 0.5, na.rm = TRUE) + ggplot2::scale_x_continuous(limits = c(currentPlot_minScale, currentPlot_maxScale)) + ggplot2::facet_grid(name ~ .) + ggplot2::theme(legend.text=ggplot2::element_text(size = 6))
 
-      if(peaksToPlot > 0)
+      if(peaksToPlot > 0 & plotPeaks == TRUE)
       {
         foreach::foreach(i = 1:peaksToPlot) %do%
           {
@@ -1965,7 +1966,7 @@ fineTunePeaks = function()
       parameterName = gsub("^(.+)_(.+)_(.+)$", "\\3", parameter_name)
       parameterName = gsub("\\.txt", "", parameterName)
 
-      RDSFilesList = list.files("rds", pattern = "*.rds")
+      RDSFilesList = list.files("rds", pattern = "step1_(.*)_raw.rds")
       RDSFileToOpenID = grep(paste("(.+)_", parameterName, "_(.+)$", sep = ""), RDSFilesList)
 
       if(length(RDSFileToOpenID) == 0) {
